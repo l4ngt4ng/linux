@@ -1,0 +1,131 @@
+g i t 
+plumbing commands 
+
+sha1("message to encode".encode("utf-8")).hexdigest()
+
+echo "test content" | git hash-object  --stdin <-------- standar output
+echo "test content" | git hash-object  --stdin -w   <--- write on git bbdd
+
+~/gittest ❯ git init 
+Initialized empty Git repository in /home/abenito/gittest/.git/
+~/gittest master ❯ ls -las
+total 12
+4 drwxr-xr-x   3 abenito abenito 4096 Dec  6 07:11 .
+4 drwx------. 49 abenito abenito 4096 Dec  6 07:11 ..
+4 drwxr-xr-x   7 abenito abenito 4096 Dec  6 07:11 .git
+
+
+echo "test content" | git hash-object  --stdin
+d670460b4b4aece5915caf5c68d12f560a9fe3e4
+
+
+~/gittest master ❯ ls -las .git/objects 
+total 16
+4 drwxr-xr-x 4 abenito abenito 4096 Dec  6 07:11 .
+4 drwxr-xr-x 7 abenito abenito 4096 Dec  6 07:11 ..
+4 drwxr-xr-x 2 abenito abenito 4096 Dec  6 07:11 info
+4 drwxr-xr-x 2 abenito abenito 4096 Dec  6 07:11 pack
+
+
+w r i t e  o v e r  b b d d  g i t 
+now Ive marked -w  
+
+
+~/gittest master ❯ echo "test content" | git hash-object  --stdin -w <----
+d670460b4b4aece5915caf5c68d12f560a9fe3e4
+~/gittest master ❯ ls -las .git/objects                             
+total 20
+4 drwxr-xr-x 5 abenito abenito 4096 Dec  6 07:13 .
+4 drwxr-xr-x 7 abenito abenito 4096 Dec  6 07:11 ..
+4 drwxr-xr-x 2 abenito abenito 4096 Dec  6 07:13 d6 <--- two first characters 
+4 drwxr-xr-x 2 abenito abenito 4096 Dec  6 07:11 info
+4 drwxr-xr-x 2 abenito abenito 4096 Dec  6 07:11 pack
+
+~/gittest master ❯ ls -las .git/objects/d6 
+total 12
+4 drwxr-xr-x 2 abenito abenito 4096 Dec  6 07:13 .
+4 drwxr-xr-x 5 abenito abenito 4096 Dec  6 07:13 ..
+4 -r--r--r-- 1 abenito abenito   29 Dec  6 07:13 70460b4b4aece5915caf5c68d12f560a9fe3e4 <--- compressed file 
+
+r e a d  t h e  c o n t e n t 
+~/gittest/.git/objects/d6 master ❯ git cat-file -p d670460b4b4aece5915caf5c68d12f560a9fe3e4
+test content
+
+d e t e r m i n e  t y p e  
+~/gittest/.git/objects/d6 master ❯ git cat-file -t d670460b4b4aece5915caf5c68d12f560a9fe3e4
+blob
+
+b l o b  t y p e 
+only save content
+dont contains name files meta data ... 
+
+---
+
+f i l e 
+
+~/gittest master ❯ echo "version 1" >test.txt
+~/gittest master* ❯ git hash-object -w test.txt 
+83baae61804e65cc73a7201a7252750c76066a30
+~/gittest master* ❯ echo "version 2" >test.txt 
+~/gittest master* ❯ git hash-object -w test.txt
+1f7a7a472abf3dd9643fd615f6da379c4acb3e3a
+
+
+~/gittest master* ❯ ls -las .git/objects 
+total 28
+4 drwxr-xr-x 7 abenito abenito 4096 Dec  6 07:21 .
+4 drwxr-xr-x 7 abenito abenito 4096 Dec  6 07:11 ..
+4 drwxr-xr-x 2 abenito abenito 4096 Dec  6 07:21 1f <---
+4 drwxr-xr-x 2 abenito abenito 4096 Dec  6 07:20 83 <---
+4 drwxr-xr-x 2 abenito abenito 4096 Dec  6 07:13 d6
+4 drwxr-xr-x 2 abenito abenito 4096 Dec  6 07:11 info
+4 drwxr-xr-x 2 abenito abenito 4096 Dec  6 07:11 pack
+
+
+rm test.txt 
+
+you can recover the content through :
+
+git cat-file -p 1f7a7a472abf3dd9643fd615f6da379c4acb3e3a
+
+r e c o v e r i n g  f i l e 
+
+~/gittest master ❯ git cat-file -p 1f7a7a472abf3dd9643fd615f6da379c4acb3e3a >test.txt
+~/gittest master* ❯ ls -asl
+total 16
+4 drwxr-xr-x   3 abenito abenito 4096 Dec  6 07:24 .
+4 drwx------. 49 abenito abenito 4096 Dec  6 07:11 ..
+4 drwxr-xr-x   7 abenito abenito 4096 Dec  6 07:11 .git
+4 -rw-r--r--   1 abenito abenito   10 Dec  6 07:24 test.txt
+~/gittest master* ❯ cat test.txt <---
+version 2
+
+
+t r e e  o b j e c t 
+
+s t a g i n g  a r e a 
+create a new tree object based on content inside object and make a new file.txt 
+~/gittest master* ❯ mkdir testdir  <--- needs path 
+~/gittest master* ❯ git update-index --add --cacheinfo 100644 83baae61804e65cc73a7201a7252750c76066a30 test-version-1.txt <---
+
+
+
+w r i t e  o n  b b d d 
+git write-tree 
+~/gittest master* ❯ git write-tree 
+cc87bb7690cfe82956646a0f68dd29a815749572
+~/gittest master* ❯ git cat-file -p cc87bb7690cfe82956646a0f68dd29a815749572
+100644 blob 83baae61804e65cc73a7201a7252750c76066a30	test-version-1.txt
+100644 blob 83baae61804e65cc73a7201a7252750c76066a30	testdir
+
+~/gittest master* ❯ git cat-file -t cc87bb7690cfe82956646a0f68dd29a815749572
+tree
+
+                 tree 
+        ___________|_____ 
+       |                 |
+       |                 |
+  blob testdir           blob test-version-1.txt         
+
+
+---
