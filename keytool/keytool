@@ -1,0 +1,89 @@
+KEYTOOL
+
+
+En los sistemas UNIX, keytool se encuentra normalmente en:
+
+$JAVA_HOME/bin/keytool
+
+En los sistemas Windows, keytool se incluye con el JRE instalado con Tivoli Risk Manager y se encuentra en:
+
+RMINSTDIR\jre\jre\bin\keytool.exe
+
+
+______________________________________________ EXAMPLES__________________________________
+
+#!/bin/sh
+ 
+# Este script de ejemplo describe la secuencia de pasos para utilizar keytool
+# para crear certificados de cliente y de servidor autofirmados para su uso
+# con el soporte para SSL de Risk Manager.
+#
+# Tenga en cuenta que en este script se supone que las claves privadas y
+# los certificados públicos están almacenados en el mismo archivo de
+# almacén de claves (cliente y servidor). Los certificados públicos
+# se pueden almacenar en almacenes de confianza independientes y
+# protegidos por contraseña.
+ 
+# Variables de entorno común de configuración
+ 
+CLIENT_DNAME="cn=Risk Manager Agent SSL Sender,ou=Tivoli,o=IBM,c=US"
+CLIENT_ALIAS="rma_ssl_sender"
+CLIENT_PW="rma_sender_pw"
+CLIENT_KEYSTORE="$CLIENT_ALIAS".jks
+CLIENT_CERTFILE="$CLIENT_ALIAS".cert
+ 
+SERVER_DNAME="cn=Risk Manager Agent SSL Receiver,ou=Tivoli,o=IBM,c=US"
+SERVER_ALIAS="rma_ssl_receiver"
+SERVER_PW="rma_receiver_pw"
+SERVER_KEYSTORE="$SERVER_ALIAS".jks
+SERVER_CERTFILE="$SERVER_ALIAS".cert
+SERVER_NCAUTH_KEYSTORE="$SERVER_ALIAS"_ncauth.jks
+ 
+DAYS_VALID=365
+ 
+set -x
+ 
+# Generar el par de claves y el almacén de claves del cliente
+# También se crea un certificado de clave pública autofirmado para el cliente
+# Al crear un par de claves, el cliente puede dar soporte a la autenticación
+# del cliente al conectarse al servidor de Tivoli Risk Manager. Si no se usa
+# la autenticación de cliente, basta con importar el certificado de clave
+# pública de servidor al almacén de claves del cliente.
+ 
+keytool -genkey -validity "$DAYS_VALID" -keypass "$CLIENT_PW" \
+-dname "$CLIENT_DNAME" -alias "$CLIENT_ALIAS" \
+-keystore "$CLIENT_KEYSTORE" -storepass "$CLIENT_PW"
+ 
+# Exportar el certificado de clave pública del cliente a un archivo
+keytool -export -keystore "$CLIENT_KEYSTORE" -storepass "$CLIENT_PW" \
+-alias "$CLIENT_ALIAS" -rfc -file "$CLIENT_CERTFILE"
+ 
+# Generar el par de claves y el almacén de claves del servidor
+# También se crea un certificado de clave pública autofirmado para el servidor
+# Un servidor también necesita un par de claves, a diferencia del cliente
+ 
+keytool -genkey -validity "$DAYS_VALID" -keypass "$SERVER_PW" \
+-dname "$SERVER_DNAME" -alias "$SERVER_ALIAS" \
+-keystore "$SERVER_KEYSTORE" -storepass "$SERVER_PW"
+ 
+# Exportar el certificado de clave pública del servidor a un archivo
+keytool -export -keystore "$SERVER_KEYSTORE" -storepass "$SERVER_PW" \
+-alias "$SERVER_ALIAS" -rfc -file "$SERVER_CERTFILE"
+ 
+# Importar el certificado de clave pública del servidor al almacén de claves
+# del cliente como nuevo certificado de confianza.
+keytool -import -keystore "$CLIENT_KEYSTORE" -storepass "$CLIENT_PW" \
+-alias "$SERVER_ALIAS" -file "$SERVER_CERTFILE" -noprompt
+ 
+# Realizar una copia del almacén de claves del servidor antes de agregar el
+# certificado del cliente
+# Se puede utilizar para probar el caso en que no se necesite autenticación
+# del cliente
+cp "$SERVER_KEYSTORE" "$SERVER_NCAUTH_KEYSTORE"
+ 
+# Importar el certificado de clave pública del cliente al almacén de claves
+# del servidor como nuevo certificado de confianza. Esto sólo es obligatorio
+# cuando el servidor requiere la autenticación del cliente.
+keytool -import -keystore "$SERVER_KEYSTORE" -storepass "$SERVER_PW" \
+-alias "$CLIENT_ALIAS" -file "$CLIENT_CERTFILE" -noprompt
+ 

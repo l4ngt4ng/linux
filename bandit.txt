@@ -1,0 +1,443 @@
+b a n d i t 
+https://overthewire.org/wargames/bandit/bandit0.html
+
+l e v e l 0_________________________________________
+
+ssh diferent port : 
+ssh bandit0@bandit.labs.overthewire.org -p 2220    <--- -option
+
+
+l e v e l 2 dashed filename open _________________________________________________________
+file -
+cat <-
+cat ./- 
+cat /home/bandit1/-
+cat /home/bandit1/*
+cat ${pwd}/-
+cat ${pwd}/*
+
+
+l e v e l 3 spaces in the file name _______________________________________________________
+cat "spaces in this filename"
+cat sp y TAB  ---> cat spaces\ in\ this\ filename
+cat s*
+cat *this*
+cat /home/bandit2/*
+cat ${pwd}/*
+cat *  ( this is the uniq file on directory)
+
+l e v e l 4 hidden files _______________________________________________________________
+ls -a inhere/
+.hidden
+
+find . 
+./hidden./.hidden
+.hidden./.bashrc ...
+
+find .  -type f -printf "%f\t%p\t%u\t%g\t%m\n" | column -t   <--- para verlo parseado ok 
+te saca todo 
+
+total ---> cat inhere/.hidden
+spdidf+pkçèq,ppocpje1pcocqdcdcdqcº
+
+find . -name .hidden
+regresa: ./inhere/.hidden
+
+find . -name .hidden | xargs cat 
+asdfadfsapdofweoreweowe
+
+y para grepear 
+find . -type f  | xargs grep "leaving" <--- prefiero grep -ri "leaving" *
+
+---
+
+a t t r   i b u t e s 
+chattr +i -V file.txt   <--- evita que el propietario aun siendo root modifique el archivo tampoco borrar
+
+lsattr   para ver los privilegios especiales de un archivo 
+
+----i------------------ ./file.txt hay un huevo de flags hay que ver esto ---> R E V I S A R 
+
+chattr -i file.txt la quitamos la flag 
+
+
+
+l e v e l  5 __________________________________________________________________
+
+find . -name -file*  son archivos -file01 -file02 ...
+
+magic number cuando no sabemos con que tipo de archivo estmos tratando 
+which file 
+/usr/bin/file 
+
+herramienta hexeditor <---- te lo pasa a hex  ---> R E V I S A R 
+
+una foto serian el primer bloque : 00000000 FF D8 FF E0 ... un jpg 
+
+ejemplo : crea un archivo con el siguiente contenido : 
+
+GIF8;
+
+hola es un texto y lo guarda como .txt 
+
+
+este archivo al haberle insertado los magic numbers de gif aunque lo guardes con .txt si le haces file lo interpreta como foto
+
+
+en hexeditor ese archivo sería : 00000000 47 49 46 38 ... un gif 
+
+---
+
+rmk file.txt <--------------------- R E V I S A R  es un comando 
+
+l e v e l 4  _____________________________________________________________________________________________ 
+
+file inhere/*
+
+te dice el tipo de archivo que es cada uno de ellos 
+
+find . -name -file* | xargs file 
+
+time find . -name -file* | xargs file
+tarda mas 
+time file inhere/*
+
+el caso es que regresa la lista y son todo de tipo data menos uno que es ASCII <--- ahi anda la contra 
+
+l e v e l 5 ____________________________________________________________________________________________
+
+buscar un archivo que es legible 
+find . -type f -readable 
+y no sea ejecutable 
+find . -type f -readable ! -executable  
+y pesa 1033 bytes
+find . -type f -readable ! -executable -size 1033c   <--- la c son bytes en find 
+
+
+bandit5@bandit:~/inhere$ find . -type f -readable -size 1033c | xargs cat
+P4L4vucdmLnm8I7Vl7jG1ApGSfjYKqJU
+                                                                             
+                                                                            
+                      bandit5@bandit:~/inhere$ find . -type f -readable -size 1033c | xargs cat|
+P4L4vucdmLnm8I7Vl7jG1ApGSfjYKqJU
+
+
+
+find . -type f -readable ! -executable -size 1033c | xargs cat | xargs    <--- el ultimo xargs es para eliminar lineas en blanco del output
+
+find . -type f -readable ! -executable -size 1033c | xargs cat | sed 's/^ *//'  idem con expresion regular y no le pone la g porque el * ya engloba el resto de opciones
+
+y tambien lo consigue asi:
+
+find . -type f -readable ! -executable -size 1033c | xargs cat | sed '/^\s*$/d'  quiero que me quites algo que comience por espacio ^\s seguido de lo que sea * y que termine en vacio $
+
+grep "^hola$" <-- que empiece con h que siga con ola y que termine ahí no saca holacaracola 
+
+grep 'loquesea' -n <--- te dice en que linea se lo ha encontrado <-------- A C O J O N A N T E 
+19994:hola  te dice en la linea 19994 esta la coincidencia hola 
+
+cat file | awk "NR==19994" --> te saca hola 
+
+
+~/banditOverTheWire ❯ cat file.txt
+hola caracola
+nene
+neno 
+encontrado  <-------------- linea 4 
+neno
+nene
+~/banditOverTheWire ❯ grep -n encontrado file.txt
+4:encontrado
+
+
+aditionals:
+
+mostra la linea 2 de un archivo :
+
+cat /etc/passwd | awk 'NR==2' <---- a c o j o n a n t e 
+
+utiliza set sin la g ---> | sed 's/root/nonroot/' esto aplica el filtro al primer match de una linea digamos si hay 
+
+root:000cdcsdcd:root ---> quedaría nonroot:000cdcsdcd:root 
+
+si le pones el g al final como siempre cambia todas los match.
+
+expresiones regulares: 
+grep "^root"  solo resolveria rootable por ejemplo pero NO chroot porque ^indica que enpiece por la r de root 
+
+ 
+
+
+l e v e l 7 __________________________________________________________________________________________________
+
+
+find / -user bandit7 -group bandit6 -size 33c 2>/dev/null |xargs cat 
+
+la contra 
+
+
+
+aditionasl:
+
+stderr to stdin --> 2>&1  
+
+si abres firefox desde consola peta la consola escribiendo stdin 
+
+firefox >/dev/null 2>&1
+
+Si no tienes nohup puedes usar disouw -a 
+
+despues de haber abierto un firefox por ejemplo:
+
+escribes disown 
+
+y pudes cerrar la consola
+
+
+
+
+
+awk '/palabraABuscar' file.txt  ( como grep pero mas lento)
+
+awk 'NF{print $NF}' --> el ultimo 
+
+echo "hola caracola" | rev                         2m 35s
+alocarac aloh
+echo "hola caracola" | rev | awk '{print $1}'| rev  <--- dos rev lo dejan = 
+caracola
+
+
+aditionals:
+
+cut -d ' ' -f1 
+
+
+
+
+l e v e l 8 _____________________________________________________________-
+
+fichero gigante con lineas de contras pero necesitas encontrar la contra que solo aparezca una vez 
+
+uniq  u n i q 
+
+~/banditOverTheWire ❯ cat a                                                 20s
+nene
+neno
+encontrado
+neno
+nene
+nene
+nena
+nena
+nino
+nino
+nino
+
+~/banditOverTheWire ❯ cat a | uniq -u
+nene
+nenoa -------------------------------> repite 
+encontrado
+nenoa -------------------------------> repite 
+nino
+
+
+hay que ordenarlo primero si no no funciona uniq -u 
+
+~/banditOverTheWire ❯ cat a | sort                           
+encontrado
+nena
+nena
+nene
+nene
+nene
+nenoa
+nenoa
+nino
+nino
+nino
+
+
+cat a | sort | uniq -u 
+encontrado
+
+_______________________
+
+
+
+l e v e l 9 
+
+usa strings data.txt para leer el archivo porque no es legible humman
+
+bandit9@bandit:~$ tail data.txt 
+���"��#E��w�u���,�>,��"��(���F2%b��j�����0^��G�Ć��2"*Չ��p���n�=#U?��w;;�q�%^1�iN�e�4�G�%d��7�O)r��Q�N\W%�o*�4��;N�D�5W:�#�l]^�
+{�)�Is6��5`�����*E`+���;hHk��1
+  
+bandit9@bandit:~$ strings data.txt | tail 
+s:?P
+9ste
+f%0sF
+
+
+como dice que la password esta detras de multiples = 
+
+andit9@bandit:~$ strings data.txt | grep "==="
+========== the
+bu========== password
+4iu========== is
+========== G7w8LIi6J3kTb8A7j9LgrywtEUlyyp6s
+
+
+aditionals
+
+bandit9@bandit:~$ strings data.txt | grep "==="
+========== the
+bu========== password
+4iu========== is
+========== G7w8LIi6J3kTb8A7j9LgrywtEUlyyp6s
+bandit9@bandit:~$ echo !$  <-------------------------- representa el ultimo argumento usado en este caso "==="
+echo "==="
+=== <----------------------------------------------------------------------------------------------------------
+
+s c r i p t 
+
+#!/usr/bin/sh 
+contador=0
+
+while read linea;do
+      echo "leyendo linea ${contador} ::: ${linea}"
+      let contador+=1
+done < cat /etc/passwd
+
+
+e n c o n s o l a
+contador=1; strings data.txt | grep "===" | while read line;do echo "linea $contador: $line"; let contador+=1;done
+
+________________________________________________________________________
+
+l e v e l 10 
+te dicen que la pass esta en una linea que contiene base64 encode
+
+lo primero 
+bandit10@bandit:~$ cat data.txt 
+VGhlIHBhc3N3b3JkIGlzIDZ6UGV6aUxkUjJSS05kTllGTmI2blZDS3pwaGxYSEJNCg==
+
+luego decode 
+
+bandit10@bandit:~$ strings data.txt | base64 -d
+The password is 6zPeziLdR2RKNdNYFNb6nVCKzphlXHBM
+
+_______________________________________________________________________
+
+level 11 te dicen que :
+The password for the next level is stored in the file data.txt, where all lowercase (a-z) and uppercase (A-Z) letters have been rotated by 13 positions
+
+Helpful Reading Material
+
+    Rot13 on Wikipedia
+
+
+esto es: 
+Input 	ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz
+Output 	NOPQRSTUVWXYZABCDEFGHIJKLMnopqrstuvwxyzabcdefghijklm
+
+
+
+bandit11@bandit:~$ cat data.txt 
+Gur cnffjbeq vf WIAOOSFzMjXXBC0KoSKBbJ8puQm5lIEi
+
+
+cifrado cesar comando tr 
+
+Input 	ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz
+
+        ||||||||||||||||||||||||||||||||||||||||||||||||||||
+        ||||||||||||||||||||||||||||||||||||||||||||||||||||
+        vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv 
+
+Output 	NOPQRSTUVWXYZABCDEFGHIJKLMnopqrstuvwxyzabcdefghijklm
+
+de modo que lo que pongas en el primer conjunto 'hola' 'celi' 
+sustituye :
+la h por c 
+la o por e
+la l por l 
+la a por i 
+
+bandit12@bandit:~$ echo "hola" | tr 'hola' 'celi' 
+celi
+bandit12@bandit:~$ echo "hola" | tr 'hola' 'celiento' 
+celi
+bandit12@bandit:~$ 
+
+VA UNO A UNO  CORRESPONDENCIA UNO A UNO 
+
+cat data.txt | tr 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz' 'NOPQRSTUVWXYZABCDEFGHIJKLMnopqrstuvwxyzabcdefghijklm'
+
+bandit11@bandit:~$ cat data.txt | tr 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz' 'NOPQRSTUVWXYZABCDEFGHIJKLMnopqrstuvwxyzabcdefghijklm'
+The password is JVNBBFSmZwKKOP0XbFXOoW8chDz5yVRv
+
+
+EL LO RESUELVE : 
+
+bandit11@bandit:~$ cat data.txt 
+Gur cnffjbeq vf WIAOOSFzMjXXBC0KoSKBbJ8puQm5lIEi
+^
+|
+empieza por g 
+
+a b c d e f g h i j k  l  m  n s o p q r s t u w x y z 
+
+
+bandit11@bandit:~$ cat data.txt | tr '[G-ZA-Fg-za-f]' '[T-ZA-St-za-s]'
+The password is JVNBBFSmZwKKOP0XbFXOoW8chDz5yVRv
+
+
+l e v e l 1 2 ____________________________________________________
+
+te dicen que es un hex file que ha sido repetidamente comprimido
+
+bandit12@bandit:~$ tail data.txt 
+000001c0: 701c c9ac 50ca adf7 bba9 226f f175 1ec2  p...P....."o.u..
+000001d0: 90de 557e ed09 5c3b 1886 84dc f110 24e7  ..U~..\;......$.
+000001e0: 871b 6148 f224 fb71 c3d1 1096 4a48 48a2  ..aH.$.q....JHH.
+000001f0: 99ea 647b 4f3b ac19 3be6 1cb9 24c3 ce48  ..d{O;..;...$..H
+
+esto es xxd hacer reverse inicialmente y vamos viendo cuantas veces ha sido comprimido:
+
+
+
+
+c o m p r e s o r e s 
+
+gzip gunzip tar b7zip ...  ---> u n i v e r s a l   7z  
+
+grep "patron" -c2  file.txt dos lineas por debajo y por encima A y B 
+
+> /dev/null 2>&1  salida del comando a devnull y si surgen errores a stdin para verlos si es un comando de decompresion va a decomprimir y generar el fichero 
+pero no ves la salida a menos que sea error 
+
+
+
+e x i t 
+
+0  exitoso
+
+1 error 
+
+ejecutas cat unficheroNoexiste 
+'unficheroNoexiste': No such file or directory
+
+echo ?$ ---> develve 1   error
+
+echo ?$ contiene el exito o fracaso de la ultima ejecucion
+
+
+
+
+l e v e l 1 3 ____________________________________________
+
+The password for the next level is stored in /etc/bandit_pass/bandit14 and can only be read by user bandit14. For this level,
+
+you don’t get the next password, but you get a private SSH key that can be used to log into the next level. 
+ 
+Note: localhost is a hostname that refers to the machine you are working on

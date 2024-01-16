@@ -1,0 +1,832 @@
+h e l m 
+
+i n s t a l l 
+
+detect OS version and download binary :
+
+curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3
+chmod 700 get_helm.sh
+
+install bynary in to : /usr/local&bin/helm
+./get_helm.sh
+
+~/helm ❯ ./get_helm.sh 
+Helm v3.10.3 is available. Changing from version v3.4.0.
+Downloading https://get.helm.sh/helm-v3.10.3-linux-amd64.tar.gz
+Verifying checksum... Done.
+Preparing to install helm into /usr/local/bin
+[sudo] password for abenito: 
+Sorry, try again.
+[sudo] password for abenito: 
+helm installed into /usr/local/bin/helm  <---
+
+
+/.config/helm ❯ helm 
+The Kubernetes package manager
+
+Common actions for Helm:
+
+- helm search:    search for charts
+- helm pull:      download a chart to your local directory to view
+- helm install:   upload the chart to Kubernetes
+- helm list:      list releases of charts
+
+Environment variables:
+
+| Name                               | Description                                                                                       |
+|------------------------------------|---------------------------------------------------------------------------------------------------|
+| $HELM_CACHE_HOME                   | set an alternative location for storing cached files.                                             |
+| $HELM_CONFIG_HOME                 
+
+i n s t a l l e d 
+
+
+c o n f i g u r e  y o u r  r e p o s 
+
+helm repo add stable https://charts.helm.sh/stable    <--- deprecated 
+
+$ helm repo add bitnami https://charts.bitnami.com/bitnami  <-------- OK 
+$ helm install my-release bitnami/<chart>           # Helm 3
+$ helm install --name my-release bitnami/<chart>    # Helm 2
+
+
+~/.config/helm ❯ ls -las
+total 12
+4 drwxr-xr-x   2 abenito abenito 4096 Dec 20 05:22 .
+4 drwx------. 40 abenito abenito 4096 Dec 20 05:22 ..
+0 -rw-------   1 abenito abenito    0 Dec 20 05:22 repositories.lock
+4 -rw-r--r--   1 abenito abenito  251 Dec 20 05:22 repositories.yaml
+
+
+~/.config/helm ❯ cat repositories.yaml 
+apiVersion: ""
+generated: "0001-01-01T00:00:00Z"
+repositories:
+- caFile: ""                           <--- ca file avoid to specify on install commmand : helm install --ca-file=ca.crt 
+  certFile: ""                                                                                          --username=admin 
+  insecure_skip_tls_verify: false                                                                       --password=Passw0rd 
+  keyFile: ""                                                                                           --version 0.1.10 repo248/chart_repo/hello-helm
+  name: stable
+  pass_credentials_all: false
+  password: ""
+  url: https://charts.helm.sh/stable
+  username: ""
+
+
+now you could make a search of a chart :
+
+~/.config/helm ❯ helm search repo nginx 
+NAME                       	CHART VERSION	APP VERSION	DESCRIPTION                                       
+stable/nginx-ingress       	1.41.3       	v0.34.1    	DEPRECATED! An nginx Ingress controller that us...
+stable/nginx-ldapauth-proxy	0.1.6        	1.13.5     	DEPRECATED - nginx proxy with ldapauth            
+stable/nginx-lego          	0.3.1        	           	Chart for nginx-ingress-controller and kube-lego  
+stable/gcloud-endpoints    	0.1.2        	1          	DEPRECATED Develop, deploy, protect and monitor...
+
+
+
+a d d  H A R B O R  t o  r e p o s i t o r y  l i s t
+https://goharbor.io/docs/1.10/working-with-projects/working-with-images/managing-helm-charts/
+
+helm repo add --ca-file ca.crt --username=admin --password=Passw0rd myHARBORNAMEREPO https://xx.xx.xx.xx/chartrepo
+
+or adding only specific projects 
+
+helm repo add --ca-file ca.crt --username=admin --password=Passw0rd myHARBORNAMEREPO https://xx.xx.xx.xx/chartrepo/myproject
+
+you need ca from HARBOR :
+
+openssl s_client -showcerts -verify 5 -connect <myHARBOR>:443 < /dev/null | awk '/BEGIN CERTIFICATE/,/END CERTIFICATE/{ if(/BEGIN CERTIFICATE/){a++}; out="cert"a".pem"; print >out}'
+
+
+for cert in *.pem; do 
+        newname=$(openssl x509 -noout -subject -in $cert | sed -nE 's/.*CN ?= ?(.*)/\1/; s/[ ,.*]/_/g; s/__/_/g; s/_-_/-/; s/^_//g;p' | tr '[:upper:]' '[:lower:]').pem
+        echo "${newname}"; mv "${cert}" "${newname}" 
+done
+
+
+p u s h  C h a r t s  t o  t h e  R e p o s i t o r y 
+https://goharbor.io/docs/1.10/working-with-projects/working-with-images/managing-helm-charts/
+
+you need install plugin before: probably 
+
+helm plugin install https://github.com/chartmuseum/helm-push
+
+helm push --ca-file=ca.crt --username=admin --password=passw0rd chart_repo/hello-helm-0.1.0.tgz myrepo
+
+
+I n s t a l l  C h a r t s
+
+Before installing, make sure your helm is correctly initialized with command:
+
+$ helm repo add stable https://charts.helm.sh/stable
+$ helm repo update  
+
+⎈ Happy Helming!⎈
+
+
+helm install --ca-file=ca.crt --username=admin --password=Passw0rd --version 0.1.10 repo248/chart_repo/hello-helm
+
+this ca you can introduce in the repository.yaml file to avoid need to specify whenever you need it
+
+
+
+
+K U B E C O N F I G  file
+~/.config/helm ❯ helm install stable/wordpress --generate-name
+WARNING: This chart is deprecated
+Error: INSTALLATION FAILED: Kubernetes cluster unreachable: Get "https://masterk8s.local.es:6443/version": dial tcp 64.190.63.111:6443: connect: connection refused
+
+you need the kubeconfig file to interact with helm:
+
+~/.config/helm ❯ helm install stable/wordpress --generate-name --kubeconfig kubeconfig   <---
+
+
+
+WARNING: Kubernetes configuration file is group-readable. This is insecure. Location: kubeconfig
+WARNING: Kubernetes configuration file is world-readable. This is insecure. Location: kubeconfig
+WARNING: This chart is deprecated
+NAME: wordpress-1671512646
+LAST DEPLOYED: Tue Dec 20 06:04:09 2022
+NAMESPACE: prometheus
+STATUS: deployed
+REVISION: 1
+NOTES:
+This Helm chart is deprecated
+
+Given the `stable` deprecation timeline (https://github.com/helm/charts#deprecation-timeline), the Bitnami maintained Helm chart is now located at bitnami/charts (https://github.com/bitnami/charts/).
+
+The Bitnami repository is already included in the Hubs and we will continue providing the same cadence of updates, support, etc that we've been keeping here these years. Installation instructions are very similar, just adding the _bitnami_ repo and using it during the installation (`bitnami/<chart>` instead of `stable/<chart>`)
+
+```bash
+$ helm repo add bitnami https://charts.bitnami.com/bitnami
+$ helm install my-release bitnami/<chart>           # Helm 3
+$ helm install --name my-release bitnami/<chart>    # Helm 2
+```
+
+To update an exisiting _stable_ deployment with a chart hosted in the bitnami repository you can execute
+
+```bash
+$ helm repo add bitnami https://charts.bitnami.com/bitnami
+$ helm upgrade my-release bitnami/<chart>
+```
+
+Issues and PRs related to the chart itself will be redirected to `bitnami/charts` GitHub repository. 
+In the same way, we'll be happy to answer questions related to this migration process in this issue 
+(https://github.com/helm/charts/issues/20969) created as a common place for discussion.
+
+** Please be patient while the chart is being deployed **
+
+
+
+To access your WordPress site from outside the cluster follow the steps below:
+
+1. Get the WordPress URL by running these commands:
+
+  NOTE: It may take a few minutes for the LoadBalancer IP to be available.
+        Watch the status with: 'kubectl get svc --namespace prometheus -w wordpress-1671512646'
+
+   export SERVICE_IP=$(kubectl get svc --namespace prometheus wordpress-1671512646 --template "{{ range (index .status.loadBalancer.ingress 0) }}{{.}}{{ end }}")
+   echo "WordPress URL: http://$SERVICE_IP/"
+   echo "WordPress Admin URL: http://$SERVICE_IP/admin"
+
+2. Open a browser and access WordPress using the obtained URL.
+
+3. Login with the following credentials below to see your blog:
+
+  echo Username: user
+  echo Password: $(kubectl get secret --namespace prometheus wordpress-1671512646 -o jsonpath="{.data.wordpress-password}" | base64 --decode)
+
+
+
+
+<---
+
+
+ u n n i n s t a l l 
+
+ helm uninstall wordpress-1671512646 --kubeconfig kubeconfig            
+WARNING: Kubernetes configuration file is group-readable. This is insecure. Location: kubeconfig
+WARNING: Kubernetes configuration file is world-readable. This is insecure. Location: kubeconfig
+release "wordpress-1671512646" uninstalled
+
+
+
+s e a r c h 
+
+~/.config/helm ❯ helm search repo nginx  
+NAME                            	CHART VERSION	APP VERSION	DESCRIPTION                                       
+bitnami/nginx                   	13.2.19      	1.23.3     	NGINX Open Source is a web server that can be a...  <---
+bitnami/nginx-ingress-controller	9.3.24       	1.6.0      	NGINX Ingress Controller is an Ingress controll...
+bitnami/nginx-intel             	2.1.13       	0.4.9      	NGINX Open Source for Intel is a lightweight se...
+stable/nginx-ingress            	1.41.3       	v0.34.1    	DEPRECATED! An nginx Ingress controller that us...
+stable/nginx-ldapauth-proxy     	0.1.6        	1.13.5     	DEPRECATED - nginx proxy with ldapauth            
+stable/nginx-lego               	0.3.1        	           	Chart for nginx-ingress-controller and kube-lego  
+stable/gcloud-endpoints         	0.1.2        	1          	DEPRECATED Develop, deploy, protect and monitor...
+
+
+
+
+
+i n s p e c t  
+
+~/.config/helm ❯ helm inspect                  
+
+This command consists of multiple subcommands to display information about a chart
+
+Usage:
+  helm show [command]
+
+Aliases:
+  show, inspect
+
+Available Commands:
+  all         show all information of the chart
+  chart       show the chart's definition
+  crds        show the chart's CRDs
+  readme      show the chart's README
+  values      show the chart's values
+
+
+
+
+
+c h a r t 
+
+~/.config/helm ❯ helm inspect chart bitnami/nginx            <---                                                                                                                                16s
+annotations:
+  category: Infrastructure
+apiVersion: v2
+appVersion: 1.23.3
+dependencies:
+- name: common
+  repository: https://charts.bitnami.com/bitnami
+  tags:
+  - bitnami-common
+  version: 2.x.x
+description: NGINX Open Source is a web server that can be also used as a reverse
+  proxy, load balancer, and HTTP cache. Recommended for high-demanding sites due to
+  its ability to provide faster content.
+home: https://github.com/bitnami/charts/tree/main/bitnami/nginx
+icon: https://bitnami.com/assets/stacks/nginx/img/nginx-stack-220x234.png
+keywords:
+- nginx
+- http
+- web
+- www
+- reverse proxy
+maintainers:
+- name: Bitnami
+  url: https://github.com/bitnami/charts
+name: nginx
+sources:
+- https://github.com/bitnami/containers/tree/main/bitnami/nginx
+- https://www.nginx.org
+version: 13.2.19
+
+
+ r e a d m e 
+
+ helm inspect readme bitnami/nginx
+<!--- app-name: NGINX Open Source -->
+
+# NGINX Open Source packaged by Bitnami
+
+NGINX Open Source is a web server that can be also used as a reverse proxy, load balancer, and HTTP cache. Recommended for high-demanding sites due to its ability to provide faster content.
+
+
+
+v a l u e s 
+
+helm inspect values bitnami/nginx
+## @section Global parameters
+## Global Docker image parameters
+## Please, note that this will override the image parameters, including dependencies, configured to use the global value
+## Current available global Docker image parameters: imageRegistry, imagePullSecrets and storageClass
+
+## @param global.imageRegistry Global Docker image registry
+## @param global.imagePullSecrets Global Docker registry secret names as an array
+##
+global:
+  imageRegistry: ""
+  ## E.g.
+  ## imagePullSecrets:
+  ##   - myRegistryKeySecretName
+  ##
+  imagePullSecrets: []
+
+## @section Common parameters
+
+## @param nameOverride String to partially override nginx.fullname template (will maintain the release name)
+##
+nameOverride: ""
+## @param fullnameOverride String to fully override nginx.fullname template
+##
+fullnameOverride: ""
+## @param namespaceOverride String to fully override common.names.namespace
+##
+namespaceOverride: ""
+## @param kubeVersion Force target Kubernetes version (using Helm capabilities if not set)
+##
+kubeVersion: ""
+## @param clusterDomain Kubernetes Cluster Domain
+##
+clusterDomain: cluster.local
+## @param extraDeploy Extra objects to deploy (value evaluated as a template)
+##
+
+
+...
+
+~/.config/helm ❯ helm inspect values bitnami/nginx | grep -v '#'
+
+global:
+  imageRegistry: ""
+  imagePullSecrets: []
+
+
+nameOverride: ""
+fullnameOverride: ""
+namespaceOverride: ""
+kubeVersion: ""
+clusterDomain: cluster.local
+extraDeploy: []
+commonLabels: {}
+commonAnnotations: {}
+
+diagnosticMode:
+  enabled: false
+  command:
+    - sleep
+  args:
+    - infinity
+
+
+image:
+  registry: docker.io
+  repository: bitnami/nginx
+  tag: 1.23.3-debian-11-r2
+  digest: ""
+  pullPolicy: IfNotPresent
+  pullSecrets: []
+  debug: false
+hostAliases: []
+command: []
+args: []
+extraEnvVars: []
+extraEnvVarsCM: ""
+extraEnvVarsSecret: ""
+
+
+replicaCount: 1
+updateStrategy:
+  type: RollingUpdate
+
+
+<---
+
+e x p o r t   v a l u e s  >toconfig.yaml
+
+helm inspect values bitnami/nginx | grep -v '#' >toconfig.yaml 
+
+and kustomize your file :
+
+helm install -f toconfig.yaml bitnami/nginx --generate-name   <--- if you dont specify 
+
+
+<---
+
+
+C R E A T I N G  O W N  C H A R T  T H E  H E L M  
+
+
+~/ff/test-helm ❯ helm create mychart 
+Creating mychart
+
+
+tree mychart  <--- directory 
+
+├── charts
+├── Chart.yaml
+├── templates
+│   ├── deployment.yaml
+│   ├── _helpers.tpl
+│   ├── hpa.yaml
+│   ├── ingress.yaml
+│   ├── NOTES.txt
+│   ├── serviceaccount.yaml
+│   ├── service.yaml
+│   └── tests
+│       └── test-connection.yaml
+└── values.yaml
+
+
+w h a t  i s  g o i n g  t o  b e  i n s t a l l e d  ???
+
+helm install --dry-run debug --kubeconfig ~/.config/helm/kubeconfig .
+
+~/ff/test-helm/mychart ❯ helm install --dry-run debug --kubeconfig ~/.config/helm/kubeconfig .                                                                                                7s
+WARNING: Kubernetes configuration file is group-readable. This is insecure. Location: /home/abenito/.config/helm/kubeconfig
+WARNING: Kubernetes configuration file is world-readable. This is insecure. Location: /home/abenito/.config/helm/kubeconfig
+NAME: debug
+LAST DEPLOYED: Tue Dec 20 06:38:08 2022
+NAMESPACE: prometheus
+STATUS: pending-install
+REVISION: 1
+HOOKS:
+---
+# Source: mychart/templates/tests/test-connection.yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: "debug-mychart-test-connection"
+  labels:
+    helm.sh/chart: mychart-0.1.0
+    app.kubernetes.io/name: mychart
+    app.kubernetes.io/instance: debug
+    app.kubernetes.io/version: "1.16.0"
+    app.kubernetes.io/managed-by: Helm
+  annotations:
+    "helm.sh/hook": test
+spec:
+  containers:
+    - name: wget
+      image: busybox
+      command: ['wget']
+      args: ['debug-mychart:80']
+  restartPolicy: Never
+MANIFEST:
+---
+# Source: mychart/templates/serviceaccount.yaml
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: debug-mychart
+  labels:
+    helm.sh/chart: mychart-0.1.0
+    app.kubernetes.io/name: mychart
+    app.kubernetes.io/instance: debug
+    app.kubernetes.io/version: "1.16.0"
+    app.kubernetes.io/managed-by: Helm
+---
+# Source: mychart/templates/service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: debug-mychart
+  labels:
+    helm.sh/chart: mychart-0.1.0
+    app.kubernetes.io/name: mychart
+    app.kubernetes.io/instance: debug
+    app.kubernetes.io/version: "1.16.0"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  type: ClusterIP
+  ports:
+    - port: 80
+      targetPort: http
+      protocol: TCP
+      name: http
+  selector:
+    app.kubernetes.io/name: mychart
+    app.kubernetes.io/instance: debug
+---
+# Source: mychart/templates/deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: debug-mychart
+  labels:
+    helm.sh/chart: mychart-0.1.0
+    app.kubernetes.io/name: mychart
+    app.kubernetes.io/instance: debug
+    app.kubernetes.io/version: "1.16.0"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: mychart
+      app.kubernetes.io/instance: debug
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: mychart
+        app.kubernetes.io/instance: debug
+    spec:
+      serviceAccountName: debug-mychart
+      securityContext:
+        {}
+      containers:
+        - name: mychart
+          securityContext:
+            {}
+          image: "nginx:1.16.0"
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 80
+              protocol: TCP
+          livenessProbe:
+            httpGet:
+              path: /
+              port: http
+          readinessProbe:
+            httpGet:
+              path: /
+              port: http
+          resources:
+            {}
+
+NOTES:
+1. Get the application URL by running these commands:
+  export POD_NAME=$(kubectl get pods --namespace prometheus -l "app.kubernetes.io/name=mychart,app.kubernetes.io/instance=debug" -o jsonpath="{.items[0].metadata.name}")
+  export CONTAINER_PORT=$(kubectl get pod --namespace prometheus $POD_NAME -o jsonpath="{.spec.containers[0].ports[0].containerPort}")
+  echo "Visit http://127.0.0.1:8080 to use your application"
+  kubectl --namespace prometheus port-forward $POD_NAME 8080:$CONTAINER_PORT
+
+
+
+
+---
+
+
+t o  m o d i f f y  v a l u e s 
+
+~/ff/test-helm/mychart/templates ❯ cat deployment.yaml   <--- d e p l o y m e n t  t e m p l a t e 
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "mychart.fullname" . }}
+  labels:
+    {{- include "mychart.labels" . | nindent 4 }}
+spec:
+  {{- if not .Values.autoscaling.enabled }}
+  replicas: {{ .Values.replicaCount }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "mychart.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "mychart.selectorLabels" . | nindent 8 }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "mychart.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: {{ .Chart.Name }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.service.port }}  <--- y o u  w a n t  m o d i f y  t h e  v a l u e 
+              protocol: TCP
+
+
+on values.yaml
+
+
+
+
+service:
+  type: ClusterIP
+  port: 80  <--- change to 443 
+
+
+or ypu want modify  : cat deployment.yaml | grep healthcheck  <--- no entries on deployment to health check 
+
+
+1.- include on values: 
+#added by me 
+
+healthcheck:
+  readinessProbe:
+    path: /readiness
+    port: http
+  livenessProbe:
+    path: /liveness
+    port: http
+
+
+
+2.- on templates/Deployment.yaml 
+
+
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: {{ .Chart.Name }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.service.port }}
+              protocol: TCP
+          livenessProbe:
+            httpGet:
+              path: /
+              port: http
+          readinessProbe:
+            httpGet:
+              path: /
+              port: http
+          resources:
+    
+
+---> 
+
+
+          livenessProbe:
+            httpGet:
+              path: {{ .Values.healthcheck.livenessProbe.path }}
+              port: {{ .Values.healthcheck.livenessProbe.port }}
+          readinessProbe:
+            httpGet:
+              path: {{ .Values.healthcheck.livenessProbe.path }}
+              port: {{ .Values.healthcheck.livenessProbe.port }}
+
+
+
+OTRO  DRY RUN :
+
+
+~/ff/test-helm/mychart ❯ helm install --dry-run debug --kubeconfig ~/.config/helm/kubeconfig .
+
+. 
+. 
+. 
+# Source: mychart/templates/deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: debug-mychart
+  labels:
+    helm.sh/chart: mychart-0.1.0
+    app.kubernetes.io/name: mychart
+    app.kubernetes.io/instance: debug
+    app.kubernetes.io/version: "1.16.0"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: mychart
+      app.kubernetes.io/instance: debug
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: mychart
+        app.kubernetes.io/instance: debug
+    spec:
+      serviceAccountName: debug-mychart
+      securityContext:
+        {}
+      containers:
+        - name: mychart
+          securityContext:
+            {}
+          image: "nginx:1.16.0"
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 80
+              protocol: TCP
+
+
+
+          livenessProbe:
+            httpGet:
+              path: /liveness 
+              port: http
+          readinessProbe:
+            httpGet:
+              path: /liveness
+              port: http
+          resources:
+            {}
+
+
+
+---
+
+
+O U R  h e l m  r e p o s i t o r y 
+
+on github settings ---> activate git hub pages 
+
+
+p a c k i n g  h e l m   c h a r t 
+
+helm package mychart 
+Successfully packaged chart and saved it to: /home/abenito/ff/test-helm/mychart-0.1.0.tgz
+
+mkdir charts 
+
+mv mychart-0.1.0.tgz charts/
+
+
+g e n e r a t e   i n d e x 
+
+
+
+looking for all artefact inside charts/ directory and create index.yaml 
+
+~/ff/test-helm ❯ tree 
+.
+├── charts
+│   └── mychart-0.1.0.tgz
+└── mychart
+    ├── charts
+    ├── Chart.yaml
+    ├── templates
+    │   ├── deployment.yaml
+    │   ├── _helpers.tpl
+    │   ├── hpa.yaml
+    │   ├── ingress.yaml
+    │   ├── NOTES.txt
+    │   ├── serviceaccount.yaml
+    │   ├── service.yaml
+    │   └── tests
+    │       └── test-connection.yaml
+    └── values.yaml
+
+
+helm repo index . 
+
+
+
+~/ff/test-helm ❯ helm repo index .
+~/ff/test-helm ❯ ls -asl
+total 20
+4 drwxr-xr-x 4 abenito abenito 4096 Dec 20 07:08 .
+4 drwxr-xr-x 4 abenito abenito 4096 Dec 20 07:07 ..
+4 drwxr-xr-x 2 abenito abenito 4096 Dec 20 07:08 charts
+4 -rw-r--r-- 1 abenito abenito  399 Dec 20 07:08 index.yaml <---
+4 drwxr-xr-x 4 abenito abenito 4096 Dec 20 06:56 mychart
+~/ff/test-helm ❯ cat index.yaml 
+apiVersion: v1
+entries:
+  mychart:
+  - apiVersion: v2
+    appVersion: 1.16.0
+    created: "2022-12-20T07:08:53.747348264+01:00"
+    description: A Helm chart for Kubernetes
+    digest: 80efb956aa3f71c5f0e8207a1cb3f690dd1041c3825910078c707fc72085b90f
+    name: mychart
+    type: application
+    urls:
+    - charts/mychart-0.1.0.tgz
+    version: 0.1.0
+generated: "2022-12-20T07:08:53.745954753+01:00"
+
+
+
+ G I T  upload complete tree -------------------------------------------------
+
+ ~/ff/test-helm ❯ tree 
+.
+├── charts
+│   └── mychart-0.1.0.tgz
+└── mychart
+    ├── charts
+    ├── Chart.yaml
+    ├── templates
+    │   ├── deployment.yaml
+    │   ├── _helpers.tpl
+    │   ├── hpa.yaml
+    │   ├── ingress.yaml
+    │   ├── NOTES.txt
+    │   ├── serviceaccount.yaml
+    │   ├── service.yaml
+    │   └── tests
+    │       └── test-connection.yaml
+    └── values.yaml
+
+ ~/ff/test-helm ❯ git add . && ...
+
+
+ add this new repository : helm repo add myrepo https://abenito.github.io/mychart  
+
+ this url has been generated activating github pages on settings before pushing <--- I M P O R T A N T 
+
+
+helm search repo mychart 
+
+helm install <packagename> abenito/mychart
+
+with settings:
+
+helm install <packagename> abenito/mychart --set healthcheck.livenessprobe.path=/  for example 

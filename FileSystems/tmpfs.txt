@@ -1,0 +1,23 @@
+tmpfs es el nombre que recibe un sistema de almacenamiento en muchos sistemas operativos de tipo Unix. Aparece como un sistema de archivos montado aunque usa memoria volátil. Es similar a los discos RAM, que aparecen como discos virtuales, y pueden contener sistemas de archivos.
+
+tmpfs normalmente también usa espacio de intercambio en situaciones en las que hay poca memoria volátil disponible.
+
+Como los datos están principalmente en memoria volátil, las velocidades para realizar operaciones en tmpfs son generalmente mucho mayores en comparación con un sistema de archivos en otros dispositivos de almacenamiento como discos rígidos.
+
+Por usar memoria volátil, los datos en tmpfs no persisten después de reiniciar el sistema.
+
+Muchas distribuciones de Unix tienen habilitado y usan tmpfs montado por defecto en /tmp o para memoria compartida. 
+
+
+Linux:
+
+tmpfs está soportado en Linux desde la versión 2.4 en adelante. 3​
+
+Antes era conocido como shmfs. Está basado en el código de ramfs usado en el inicio del sistema y también usa la caché de páginas, pero a diferencia de ramfs soporta por ejemplo intercambiar páginas con poco uso en el espacio de intercambio, limitar el tamaño del sistema de archivos y limitar la cantidad máxima de inodes para evitar que el sistema se quede sin memoria. Estos valores tienen efecto desde el montaje y pueden modificarse remontando el sistema de archivos.
+
+Un uso de tmpfs por ejemplo es "mount -t tmpfs -o size=1G,nr_inodes=10k,mode=0700 tmpfs /space" el cual permite hasta 1 GiB en la memoria RAM/swap con 10240 inodos y es accesible sólo por el dueño del directorio /space.
+
+Es preciso notar que si tmpfs es usado por /tmp entonces se debe colocar el sticky bit por cuestiones de seguridad,4​ y "mode=1777" deberá ser usado normalmente, en lugar de "mode=0777" o "mode=777".
+
+/var/run y /var/lock también pueden ser sistemas de archivos tmpfs.
+

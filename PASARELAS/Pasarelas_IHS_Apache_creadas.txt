@@ -1,0 +1,1769 @@
+NOTAS del fichero de configuración de LDAP en IHS
+	1. El filtro del usuario siempre tiene que ser uid, puesto que en Correos se estableció que para identificar usuarios normales se usaba uid y para identificar usuarios de bind se utilizaba cn.
+	
+    2. ldap.application.password.stashFile=/etc/opt/tdsum/serviciorecogidas.sth Este fichero contiene la password del usuario de bind específico para ese servicio.
+	
+	3. ldap.key.file.password.stashfile Contiene la password del almacen de certificados para establecer conexion SSL entre IHS y TDS (todas las configuraciones comparten el mismo puesto que es el mismo almacén que el configurado en TDS).
+
+
+============
+notificaciones-in PRE GOI txz113 (No sé ni petición ni quién la creó)
+evt_LINCE_Recepcion_Notificaciones.msgflow de la aplicacion LINCE_Recepcion_Proveedores en BKPRE01
+		Los mensajes de entrada de este flujo llegan mediante un servicio al que se llama desde la URL:
+ 		https://notificaciones-inpre.correos.es:20307/notificaciones-in
+
+PRE: gac / CGj1VOkm
+PRO: w0017332 / 058T9Ghg
+
+29 de junio
+=========== 
+CRQ000000111688 OV2 - DES - creación nuevos contextos acceso ws correospaq
+
+
+Descripción detallada: Buenas tardes:
+
+Solicitamos que se haga una modificación de entorno para el acceso al siguiente WS: CorreosPaq
+
+La URL actual es:
+- DES: http://correospaqdes.correos.es/correospaqws/CorreospaqService
+
+Es necesario que para los accesos desde el exterior a Correos se controle con chequeo de usuario, contraseña y pertenencia a grupo cada WS.
+
+Debe ser así:
+TDSUM_AuthGroupDN="cn=CORREOSPAQ_DES_US_AUTHMERCHANTS,ou=Roles,ou=correospaq,ou=Aplicaciones,o=public,o=correos,c=es"
+
+Si este WS ya dispone de grupo propio en TDS por favor, adaptad la línea con el nombre y la referencia al grupo ya existente, si no, se deberá crear uno nuevo para esta necesidad.
+
+Desde dentro de Correos (usuarios y aplicaciones) se debe poder acceder al mismo sin necesidad de usuario, contraseña y pertenencia a grupo.
+
+Entiendo que esto se deberá realizar con 2 endpoints nuevos diferentes para la llamada a cada WS (1 autenticada y otra sin autenticar).
+
+LOS ENDPOINT ACTUALES SE DEBEN SEGUIR MANTENIENDO ACTIVOS Y SIN MODIFICACIONES PARA QUE QUIEN ESTÉ USANDO ESTE SERVICIO PUEDA SEGUIR HACIÉNDOLO SIN SUFRIR MODIFICACIONES.
+
+Gracias de antemano y un cordial saludo,
+Arquitectura de sistemas.
+
+
+Usuario: S002450 
+Contraseña: rUMlhT2C
+
+
+Busco en TDS DES a ese usuario para saber la rama pero no existe.
+
+
+Cosas realizadas:
+	1. Instalación de cliente LDAP en dxp395
+	2. Configuración de TDSUM
+		1. Se han copiado los ficheros y directorios indicados en la petición.
+		2. Se han dejado los ficheros especificados en dxp395
+		3. Se ha configurado el fichero /etc/opt/tdsum/tdsum_correospaq.conf
+		4. La prueba de tdsum funciona correctamente (detalles en TareasIngenieria.txt)
+		5. Se ha adaptado el scrpt gestion_usuarios.ctl.sh para que funcione.
+
+	3. Configuración del webserver
+Se ha modificado el fichero http_correospaq.conf para que incluya autenticación con LDAP pero no disponemos de la contraseña del usuario de bind.
+
+        SetEnvIf Authorization "(.*)" MiAuthorization=$1
+        <Location /correospaqws/AuthCorreospaqService>
+                # Configuración para validación directa contra LDAP
+                #Satisfy all
+                LDAPConfigFile /opt/WebSphere/HTTPServer85/conf/ldap_correospaq.prop
+                AuthType Basic
+                AuthName "Correospaq_Auth"
+                LDAPRequire group CORREOSPAQ_DES_US_AUTHMERCHANTS
+                Require valid-user
+                RequestHeader unset Authorization
+        </Location>
+
+        RewriteEngine on
+
+        RewriteRule ^/correospaqws/AuthCorreospaqService/(.*) https://correospaqdes.correos.es/correospaqws/CorreospaqService/$1 [P,L]
+        ProxyPassReverse /correospaqws/AuthCorreospaqService https://correospaqdes.correos.es/correospaqws/CorreospaqService
+
+
+2 y 3 de agosto
+===============
+CRQ000000118984
+
+Entorno de preproducción
+
+plz491/plz492 Pasarela de entrada
+
+Listener port servidor 01	plz491.correosext.local:20315
+Listener port servidor 02	plz492.correosext.local:20315
+
+Certificado servidor		firmadoc.correos.es
+Certificado cliente			n/a
+
+CA				Instala la CA correspondiente al servidor 'sappopro.correos.es'
+Directorio base				/aplicaciones/web/linkmobisappipo
+Home config					/opt/jboss/httpd/httpd/conf
+Fichero de configuración del proxy	httpd_linkmobisappipo.conf
+
+
+URL origen	https://firmadoc.correos.es:20315/entrada
+URL destino https://sappopro.correos.es:50002/XISOAPAdapter/MessageServlet?senderParty=&senderService=BC_LINKMOBILITY&receiverParty=&receiverService=&interface=SI_OA_Callback&interfaceNamespace=urn:correos.com:crm:linkmobility:firmadigital
+
+ProxyPasss ---> configurado con RewriteRule porque así se ha configurado en preproducción
+
+
+        SSLCertificateFile /opt/jboss/httpd/httpd/ssl/linkmobisappipo/firmadoc.correos.es.cer
+        SSLCertificateKeyFile /opt/jboss/httpd/httpd/ssl/linkmobisappipo/firmadoc.correos.es.key
+        SSLCertificateChainFile /opt/jboss/httpd/httpd/ssl/linkmobisappipo/CAs.cer
+
+
+
+
+plz491/plz492 Pasarela de salida
+
+Listener port servidor 01	plz491.correosext.local:20313
+Listener port servidor 02	plz492.correosext.local:20313
+¿SSL Enable?	https
+
+Certificado servidor		wsout.correosext.local
+Certificado cliente			n/a
+
+CA	Instala la CA correspondiente al servidor 'linkmobility.rubricae.es'
+Directorio base	/aplicaciones/web/sappipolinkmovi
+Home config	/opt/jboss/httpd/httpd/conf
+Fichero de configuración del proxy	httpd_sappipolinkmobi.conf
+
+URL origen	https://wsout.correosext.local:20313/salida
+URL destino	https://linkmobility.rubricae.es
+
+ProxyPass
+
+
+        SSLCertificateFile /opt/jboss/httpd/httpd/ssl/sappipolinkmobi/noproductivo.cer
+        SSLCertificateKeyFile /opt/jboss/httpd/httpd/ssl/sappipolinkmobi/noproductivo.key
+        SSLCertificateChainFile /opt/jboss/httpd/httpd/ssl/sappipolinkmobi/CAs.cer
+
+6 Agosto
+=========
+CRQ000000106745  ---> 28 de agosto pase a producción (Ov2 ya estaba en producción pero serviciorecogidas no)
+			Se prueba que los contextos con LDAP piden usuario/contraseña.
+		        Los contextos sin LDAP devuelven 404 (not found). Esto pasa antes de activar LDAP también. Quizás la prueba está mal hecha.
+
+WS estacionados y 	WS recogidas: pxz113/pxz114  HA CERRADO LAS TAREAS CARMELO SOLO SE COMPRUEBA SINTASIX DE APACHE y TDSUM
+
+WS estacionados (Ya estaba configurado) --> el grupo es desestacionados y no ov2desestacionados como indica la petición??
+
+
+	1. Está configurado IHS para autenticar con LDAP
+	2. Está creado el fichero de propiedades de LDAP que es referenciado en el fichero de configuración de IHS. Está configurado como usuario de bind cn=S002096,ou=desestacionados,ou=aplicaciones,o=public,o=correos,c=es, pero no sabemos la contraseña. Los ficheros a los que se hace referencia aquí están creados.
+	3. El fichero tdsum está creado /etc/opt/tdsum/tdsum_ov2desestacionados.conf
+	4. El fichero /opt/WebSphere/HTTPServer85/conf/ov2desestacionados_users también está creado
+
+        Tenemos la contraseña del usuario S002096 y el actualizador.
+	TDSUM_BindDN="cn=S002096,ou=desestacionados,ou=aplicaciones,o=public,o=correos,c=es"
+        TDSUM_BindPwd="iE38ZkCV"
+	
+WS servicio recogidas
+	1. Configurado IHS para autenticar con LDAP
+	2. Creado el fichero de propiedades de LDAP que es referenciado en el fichero de configuración de IHS. No tiene configurado el usuario de bind porque no sabemos cuál es, campo ldap.application.DN. Falta crear el fichero ldap.application.password.stashFile=/etc/opt/tdsum/serviciorecogidas.sth, porque no sabemos la pwd. 
+	3. El fichero tdsum está etc/opt/tdsum/tdsum_serviciorecogidas.conf creado pero no configurado porque no sabemos los usuarios
+	TDSUM_BindDN=
+        TDSUM_BindPwd=
+        TDSUM_AuthGroupDN="cn=SERVICIORECOGIDAS_PRO_US_AUTHMERCHANTS,ou=Roles,ou=serviciorecogida,ou=Aplicaciones,o=public,o=correos,c=es
+	4. El fichero /opt/WebSphere/HTTPServer85/conf/serviciorecogidas_users está creado vacío.
+
+
+
+Para chequear configuración
+/opt/WebSphere/HTTPServer85/bin/apachectl -f /opt/WebSphere/HTTPServer85/conf/httpd_serviciorecogidas.conf_CRQ000000106745 -t
+
+Para hacer pruebas (se cambia el cn=root al usuario de bind).
+ /opt/IBM/ldap/V6.1/bin/ldapsearch -B -ZK /db2tds/sisdir00/keys/tdsdmz.correosext.local.kdb -D cn=root -w 101indio -b ou=Aplicaciones,o=public,o=correos,c=es  "(&(cn=SERVICIORECOGIDAS_PRO_US_AUTHMERCHANTS)(|(objectclass=groupofnames)(objectclass=groupofuniquenames)))" member uniquemember
+cn=SERVICIORECOGIDAS_PRO_US_AUTHMERCHANTS,ou=Roles,ou=serviciorecogidas,ou=Aplicaciones,o=public,o=correos,c=es
+uniquemember=cn=root
+
+Pruebas en remoto:
+ /opt/IBM/ldap/V6.3/bin/ldapsearch -h tdsdmz.correosext.local -p 636 -B -ZK /etc/opt/tdsum/tdsdmz.correosext.local.kdb -D cn=root -w 101indio -b ou=Aplicaciones,o=public,o=correos,c=es  "(&(cn=SERVICIORECOGIDAS_PRO_US_AUTHMERCHANTS)(|(objectclass=groupofnames)(objectclass=groupofuniquenames)))" member uniquemember
+
+/opt/IBM/ldap/V6.1/bin/ldapsearch -B -ZK /db2tds/sisdir00/keys/tdsdmz.correosext.local.kdb -D cn=S002096,ou=desestacionados,ou=aplicaciones,o=public,o=correos,c=es -w iE38ZkCV -b ou=Aplicaciones,o=public,o=correos,c=es "objectclass=inetOrgPerson" DN
+cn=S000884,ou=spazio,ou=Aplicaciones,o=public,o=correos,c=es
+
+cn=patrol,ou=patrol,ou=Aplicaciones,o=public,o=correos,c=es
+
+cn=S002097,ou=desestacionados,ou=aplicaciones,o=public,o=correos,c=es
+
+cn=S002096,ou=desestacionados,ou=aplicaciones,o=public,o=correos,c=es
+
+
+Para buscar si el usuario bind está creado
+/opt/IBM/ldap/V6.4/bin/ldapsearch -D cn=root -w \? -b o=public,o=correos,c=es "cn=S002450" DN
+
+Probar WS desestacionados, se crea usuario mediante tdsum y se comprueba que existe en el grupo indicado: ejemplo ov2desestacionados
+sudo /usr/local/bin/tdsum -f /etc/opt/tdsum/tdsum_ov2desestacionados.conf add prueba
+
+
+pxz202:/opt/IBM/ldap/V6.1/bin # ./idsldapsearch -h localhost -p 389 -D cn=root -w 101indio -s sub -b "cn=DESESTACIONADOS_PRO_US_AUTH,ou=Roles,ou=desestacionados,ou=aplicaciones,o=public,o=correos,c=es" objectclass=*
+cn=DESESTACIONADOS_PRO_US_AUTH,ou=Roles,ou=desestacionados,ou=aplicaciones,o=public,o=correos,c=es
+objectclass=top
+objectclass=groupOfUniqueNames
+objectclass=correosRol
+cn=DESESTACIONADOS_PRO_US_AUTH
+uniquemember=cn=root
+uniquemember=uid=prueba,ou=empresas,ou=usuarios,o=public,o=correos,c=es
+uniquemember=uid=GACCPRUE,ou=empresas,ou=usuarios,o=public,o=correos,c=es
+uniquemember=uid=GACCPRUU,ou=empresas,ou=usuarios,o=public,o=correos,c=es
+uniquemember=uid=GACCPRUS,ou=empresas,ou=usuarios,o=public,o=correos,c=es
+
+curl --insecure https://pxz113.correos.es:20227/Wsdesestacionados_auth -u prueba:prueba.123
+
+Probar WS serviciorecogidas
+
+Se crea usuario prueba123
+wasadm@pxz113:~$ sudo /usr/local/bin/tdsum -f /etc/opt/tdsum/tdsum_serviciorecogidas.conf add prueba123
+Operacion: Aniadir usuario 'prueba123'
+Credenciales para la operacion: 'cn=S002266,ou=merchants,ou=aplicaciones,o=public,o=correos,c=es'
+Contenedor: 'ou=empresas,ou=usuarios,o=public,o=correos,c=es'
+Comprobando si existe el usuario...
+Usuario no encontrado (OK)
+Introduce contrasenia para el usuario uid=prueba123:
+Repite la contrasenia:
+No concuerdan. Vuelve a intentarlo.
+Introduce contrasenia para el usuario uid=prueba123:
+Repite la contrasenia:
+Aniadiendo usuario...
+Operation 0 adding new entry uid=prueba123,ou=empresas,ou=usuarios,o=public,o=correos,c=es
+
+
+Se mapea el usuario
+wasadm@pxz113:~$ sudo /usr/local/bin/tdsum -f /etc/opt/tdsum/tdsum_serviciorecogidas.conf map prueba123
+Operacion: Mapear usuario 'prueba123' al grupo de autorizacion
+Credenciales para la operacion: 'cn=S002286,ou=serviciorecogidas,ou=aplicaciones,o=public,o=correos,c=es'
+Contenedor: 'ou=empresas,ou=usuarios,o=public,o=correos,c=es'
+Grupo de autorizacion: 'cn=SERVICIORECOGIDAS_PRO_US_AUTHMERCHANTS,ou=Roles,ou=serviciorecogidas,ou=Aplicaciones,o=public,o=correos,c=es'
+Buscando usuario en grupo de autorizacion...
+Operation 0 modifying entry cn=SERVICIORECOGIDAS_PRO_US_AUTHMERCHANTS,ou=Roles,ou=serviciorecogidas,ou=Aplicaciones,o=public,o=correos,c=es
+
+
+
+Se comprueba que el usuario se encuentra en el grupo de autorización (consulta en TDS)
+
+bash-4.2$ /opt/IBM/ldap/V6.1/bin/ldapsearch -ZK /db2tds/sisdir00/keys/tdsdmz.correosext.local.kdb -D cn=root -w \? -b "cn=SERVICIORECOGIDAS_PRO_US_AUTHMERCHANTS,ou=Roles,ou=serviciorecogidas,ou=aplicaciones,o=public,o=correos,c=es" objectClass=*
+Enter password ==>
+cn=SERVICIORECOGIDAS_PRO_US_AUTHMERCHANTS,ou=Roles,ou=serviciorecogidas,ou=Aplicaciones,o=public,o=correos,c=es
+objectclass=top
+objectclass=groupOfUniqueNames
+objectclass=correosRol
+cn=SERVICIORECOGIDAS_PRO_US_AUTHMERCHANTS
+uniquemember=cn=root
+uniquemember=uid=w0017332,ou=empresas,ou=usuarios,o=public,o=correos,c=es
+uniquemember=uid=prueba123,ou=empresas,ou=usuarios,o=public,o=correos,c=es
+
+
+Se hace prueba
+wasadm@pxz113:/aplicaciones/web/serviciorecogidas/logs$ curl --insecure https://pxz113.correos.es:20193/serviciorecogidas_auth -u prueba123:prueba123
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML 2.0//EN">
+<html><head>
+<title>401 Authorization Required</title>
+</head><body>
+<h1>Authorization Required</h1>
+<p>This server could not verify that you
+are authorized to access the document
+requested.  Either you supplied the wrong
+credentials (e.g., bad password), or your
+browser doesn't understand how to supply
+the credentials required.</p><p></p>
+<hr>
+<address>IBM_HTTP_Server at pxz113.correos.es Port 20193</address>
+</body></html>  
+Este error primeramente desapareció : fichero ldap incluía comillas en el usuario y incluimos Satisfy any en el fichero de configuración del IHS
+				      Con Satisfy any se saltaba todo el rato la autenticación (pusieras o no usuario en la llamada a *_auth, se accedía, volvimos a cambiar a Satisfy All y ya funcionaba bien de nuevo
+
+curl --insecure https://pxz113.correos.es:20193/serviciorecogidas_auth -u otraprueba:otraprueba
+
+=================================================
+21 de agosto
+
+CRQ000000119448 IRIS6.PRE - Configurar proxy Webservice (con LDAP) WebService logísticaInversa  USUARIO MAL CREADO!!
+
+"NOTA SOBRE LA CREACIÓN DEL USUARIO BIND S002284
+
+El usuario bind está creado, pero no está mapeado a los grupos correctos. Actualmente, pertenece al grupo DE USUARIOS cn=LOGISTICAINVERSA_PRE_US_AUTHMERCHANTS, cuando debe pertenecer a grupos DE ADMINISTRADORES:
+
+Situación actual:
+
+$ ldapsearch -h txz203 -ZK ./noproductivo.kdb -D cn=root -w \? -b "ou=logisticainversa,ou=aplicaciones,o=public,o=correos,c=es" "cn=S002284" ibm-allgroups
+Enter password ==>
+cn=S002284,ou=logisticainversa,ou=aplicaciones,o=public,o=correos,c=es
+ibm-allgroups=cn=LOGISTICAINVERSA_PRE_US_AUTHMERCHANTS,ou=Roles,ou=logisticainversa,ou=aplicaciones,o=public,o=correos,c=es
+
+Acciones para corregirlo.
+
+1. Desmapear al usuario BIND cn=S002284 del grupo de usuarios cn=LOGISTICAINVERSA_PRE_US_AUTHMERCHANTS.
+
+2. Mapear el usuario bind cn=S002284 a los grupos correctos, que son
+2.1. cn=TDS_PRE_AD_TOTSINLOGISTICAINVERSA,ou=roles,ou=umgt,ou=aplicaciones,o=public,o=correos,c=es
+2.2. cn=TDS_PRE_AD_LECTEXTUE,ou=roles,ou=umgt,ou=aplicaciones,o=public,o=correos,c=es"
+
+
+14 septiembre: fichero de configuración y tdsum creado.
+24 de septiembre: confirman que ya pueden acceder --> sin embargo el script tdsum sigue dando errores al mapear usuario. El script tdsum sigue fallando en el caso de mapear usuarios.
+20 de noviembre, Jorge indica que el usuario está mal creado
+26 de noviembre, todavía no se ha modificado el usuario.
+"el usuario bind (cn=S002284,ou=logisticainversa,ou=aplicaciones,o=public,o=correos,c=es) está mal creado. Para corregirlo, es necesario
+
+    Desmapearlo del grupo de “invitados” a LOGISTICAINVERSA, esto es, cn=TDS_PRE_AD_LECTEXTLOGISTICAINVERSA,ou=roles,ou=umgt,ou=aplicaciones,o=public,o=correos,c=es
+    Mapearlo al grupo que le permite explorar en la rama de empresas, esto es, cn=TDS_PRE_AD_LECTEXTUE,ou=roles,ou=umgt,ou=aplicaciones,o=public,o=correos,c=es"
+27 noviembre. El usuario ya ha sido modificado y ya se pueden mapear roles. 
+
+
+Notas de creación de la pasarela
+Usuario de bind: S002284
+Por favor llamar al telefono   ( rico24318)  para proporcionaros la contraseña rUMlhT2C
+
+Se crea el grupo LOGISTICAINVERSA_PRE_US_AUTHMERCHANTS 
+en el contenedor  ou=Roles,ou=logisticainversa,ou=aplicaciones,o=public,o=correos,c=es
+
+
+ldap
+Localización del fichero	/opt/WebSphere/HTTPServer85/conf/ldap/ldap_iris6logisticainversa.prop
+ldap.realm	TDSDMZPRE
+ldap.URL	ldaps://tdsdmzpre.correosextpre.local:636/ou=empresas,ou=usuarios,o=public,o=correos,c=es
+ldap.group.URL	ldaps://tdsdmzpre.correosextpre.local:636/ou=roles,ou=logisticainversa,ou=aplicaciones,o=public,o=correos,c=es
+ldap.transport	SSL
+ldap.application.authType	Basic
+ldap.application.DN	cn=Snnnnnn,ou=logisticainversa,ou=aplicaciones,o=public,o=correos,c=es
+ldap.application.password.stashFile	/opt/WebSphere/HTTPServer85/conf/ldap/Snnnnnn.sth
+ldap.user.authType	BasicIfNoCert
+ldap.user.name.filter	(&(uid=%v1)(objectclass=inetOrgPerson))
+ldap.user.cert.filter	(&(cn=%v1)(objectclass=inetOrgPerson))
+ldap.group.name.filter	(&(cn=%v1)(objectclass=groupOfUniqueNames))
+ldap.group.memberAttributes	member uniquemember
+ldap.idleConnection.timeout	600
+ldap.waitToRetryConnection.interval	300
+ldap.search.timeout	60
+ldap.cache.timeout	600
+ldap.key.fileName	/opt/WebSphere/HTTPServer85/conf/ldap/noproductivo.kdb
+ldap.key.file.password.stashFile	/opt/WebSphere/HTTPServer85/conf/ldap/noproductivo.sth
+ldap.key.label	noproductivo
+ldap.group.memberattribute	uniquegroup
+ldap.group.dnattributes	groupofnames groupofuniquenames
+ldap.group.search.depth	1
+
+
+
+
+El script tdsum se configura siguiendo documento:
+
+Contenedor LDAP: logisticainversa
+Usuario bind: S002284
+Usuario actualizador: genérico PRE
+Sufijo Rol: AUTHMERCHANTS
+Entorno operación: txz113
+Fichero a crear: /etc/opt/tdsum/tdsum_logisticainversa.conf
+Permisos fichero: rw-------
+TDSUM_Ldaphost: tdsdmzpre.correosextpre.local
+TDSUM_KdbFile: /etc/opt/tdsum/noproductivo.kdb
+TDSUM_BindDN: cn=S002284,ou=logisticainversa,ou=aplicaciones,o=public,o=correos,c=es
+TDSUM_AuthGroupDN: cn=LOGISTICAINVERSA_PRE_US_AUTHMERCHANTS,ou=roles,ou=logisticainversa,ou=aplicaciones,o=public,o=correos,c=es
+TDSUM_AuthGroupDN: cn=LOGISTICAINVERSA_PRE_US_AUTHMERCHANTS,ou=roles,ou=logisticainversa,ou=aplicaciones,o=public,o=correos,c=es	
+TDSUM_UpdDN: cn=Snnnnnn,ou=logisticainversa,ou=aplicaciones,o=public,o=correos,c=es
+
+
+1. Mirar cómo se ha creado el usuario
+
+wasadm@txz203:/pre/db2tds/keys> /opt/IBM/ldap/V6.4/bin/ldapsearch -ZK /pre/db2tds/keys/noproductivo.kdb -D cn=root -w \? -b o=public,o=correos,c=es "cn=S002284"
+Enter password ==>
+uid=S002284,ou=Sistemas,ou=Usuarios,o=public,o=correos,c=es
+uid=S002284
+description=NOT ASCII
+objectclass=inetorgperson
+objectclass=organizationalperson
+objectclass=person
+objectclass=top
+givenname=LOGICAINVERSA
+sn=NOT ASCII
+cn=S002284
+
+   Usuario bueno
+
+wasadm@txz203:/home/wasadm> /opt/IBM/ldap/V6.4/bin/ldapsearch -ZK /pre/db2tds/keys/noproductivo.kdb -D cn=root -w \? -b o=public,o=correos,c=es "cn=S002284"                  Enter password ==>
+cn=S002284,ou=logisticainversa,ou=aplicaciones,o=public,o=correos,c=es
+userPassword={SSHA}1EdLSdzwO29WuFosi5ARiypJh7ZXGRWgbc4B9G15unh0Aje4CEdrDg==
+objectclass=inetorgperson
+objectclass=organizationalperson
+objectclass=person
+objectclass=top
+sn=USUARIO BIND TDSPRE
+cn=LOGISTICACAINVERSA
+cn=S002284
+
+
+Comprobar la contraseña del usuario
+
+wasadm@txz203:/pre/db2tds/keys> /opt/IBM/ldap/V6.4/bin/ldapsearch -ZK /pre/db2tds/keys/noproductivo.kdb -D uid=S002284,ou=Sistemas,ou=Usuarios,o=public,o=correos,c=es -w rUMlhT2C -b ou=logisticainversa,ou=aplicaciones,o=public,o=correos,c=es objectClass=*
+ou=logisticainversa,ou=aplicaciones,o=public,o=correos,c=es
+ou=logisticainversa
+objectclass=organizationalUnit
+objectclass=top
+
+ou=Roles,ou=logisticainversa,ou=aplicaciones,o=public,o=correos,c=es
+ou=Roles
+objectclass=organizationalUnit
+objectclass=top
+
+cn=LOGISTICAINVERSA_PRE_US_AUTHMERCHANTS,ou=Roles,ou=logisticainversa,ou=aplicaciones,o=public,o=correos,c=es
+objectclass=correosRol
+objectclass=groupOfUniqueNames
+objectclass=top
+cn=LOGISTICAINVERSA_PRE_US_AUTHMERCHANTS
+uniquemember=cn=TIM Adapter
+
+  Usuario bueno
+wasadm@txz203:/home/wasadm> /opt/IBM/ldap/V6.4/bin/ldapsearch -ZK /pre/db2tds/keys/noproductivo.kdb -D cn=S002284,ou=logisticainversa,ou=aplicaciones,o=public,o=correos,c=es -w rUMlhT2C -b ou=logisticainversa,ou=aplicaciones,o=public,o=correos,c=es objectclass=*
+
+No pertenece a ningún grupo. No tiene acceso a la rama ou=logisticainversa
+
+Comprobar grupos/roles
+
+wasadm@txz203:/home/wasadm> /opt/IBM/ldap/V6.4/bin/ldapsearch -ZK /pre/db2tds/keys/noproductivo.kdb -D cn=root -w \? -b o=public,o=correos,c=es "cn=S002284" ibm-allgroups    Enter password ==>
+cn=S002284,ou=logisticainversa,ou=aplicaciones,o=public,o=correos,c=es
+
+Después de la modificación sale esto:
+
+wasadm@txz203:/home/wasadm> /opt/IBM/ldap/V6.4/bin/ldapsearch -ZK /pre/db2tds/keys/noproductivo.kdb -D cn=S002284,ou=logisticainversa,ou=aplicaciones,o=public,o=correos,c=es -w rUMlhT2C -b ou=logisticainversa,ou=aplicaciones,o=public,o=correos,c=es objectClass=*
+
+
+wasadm@txz203:/home/wasadm> /opt/IBM/ldap/V6.4/bin/ldapsearch -ZK /pre/db2tds/keys/noproductivo.kdb -D cn=root -w \? -b ou=logisticainversa,ou=aplicaciones,o=public,o=correos,c=es "cn=S002284" ibm-allgroups
+Enter password ==>
+cn=S002284,ou=logisticainversa,ou=aplicaciones,o=public,o=correos,c=es
+ibm-allgroups=cn=LOGISTICAINVERSA_PRE_US_AUTHMERCHANTS,ou=Roles,ou=logisticainversa,ou=aplicaciones,o=public,o=correos,c=es
+
+No estoy segura si están bien creados (no estaban bien creados, no tiene que pertenecer al grupo PRE_US_AUTHMERCHANT)
+
+===========================================================================================
+22 de agosto
+
+CRQ000000119014 IRIS6 PRO -  Configuración de proxy Webservice (con LDAP) WebService logisticaInversa. REVISAR USUARIO bind (tdsum no puede mapear)
+
+Usuario de bind: S002283 
+Para solicitar la contraseña llamar a las extension ( rico24318) SGID
+
+1. Compruebo como se ha creado el usuario
+
+bash-4.2$ /opt/IBM/ldap/V6.1/bin/ldapsearch -B -ZK /db2tds/sisdir00/keys/tdsdmz.correosext.local.kdb -D cn=root -w ? -b o=public,o=correos,c=es "cn=S002283"
+Enter password ==>
+cn=S002283,ou=logisticainversa,ou=Aplicaciones,o=public,o=correos,c=es
+objectclass=top
+objectclass=inetOrgPerson
+objectclass=organizationalPerson
+objectclass=person
+cn=S002283
+sn= LogicaInversa Bind User
+uid=-
+userPassword={SSHA}74aSjdiQHHY6kkoAwDwX6d0/Cwk5eA/n6bg0PVCikOkD7jQGbEt1pw==
+
+2. Compruebo los grupos a los que pertenece
+
+bash-4.2$ /opt/IBM/ldap/V6.1/bin/ldapsearch -B -ZK /db2tds/sisdir00/keys/tdsdmz.correosext.local.kdb -D cn=root -w ? -b o=public,o=correos,c=es "cn=S002283" ibm-allgroups
+Enter password ==>
+cn=S002283,ou=logisticainversa,ou=Aplicaciones,o=public,o=correos,c=es
+ibm-allgroups=cn=TDS_PRO_AD_LECTEXTLOGISTICAINVERSA,ou=roles,ou=umgt,ou=aplicaciones,o=public,o=correos,c=es
+ibm-allgroups=cn=TDS_PRO_AD_TOTSINLOGISTICAINVERSA,ou=roles,ou=umgt,ou=aplicaciones,o=public,o=correos,c=es
+
+
+En principio parece que el usuario está bien creado.
+
+
+3. Comprobar contraseña
+
+/opt/IBM/ldap/V6.1/bin/ldapsearch -ZK /db2tds/sisdir00/keys/tdsdmz.correosext.local.kdb -D cn=S002283,ou=logisticainversa,ou=Aplicaciones,o=public,o=correos,c=es -w 3V3Nblyl -b ou=logisticainversa,ou=aplicaciones,o=public,o=correos,c=es objectClass=*
+
+
+bash-4.2$ /opt/IBM/ldap/V6.1/bin/ldapsearch -ZK /db2tds/sisdir00/keys/tdsdmz.correosext.local.kdb -D cn=S002283,ou=logisticainversa,ou=Aplicaciones,o=public,o=correos,c=es -w 3V3Nblyl -b ou=logisticainversa,ou=aplicaciones,o=public,o=correos,c=es objectClass=*
+ou=logisticainversa,ou=aplicaciones,o=public,o=correos,c=es
+ou=logisticainversa
+objectclass=organizationalUnit
+objectclass=top
+
+ou=Roles,ou=logisticainversa,ou=aplicaciones,o=public,o=correos,c=es
+ou=Roles
+objectclass=organizationalUnit
+objectclass=top
+
+cn=S002283,ou=logisticainversa,ou=Aplicaciones,o=public,o=correos,c=es
+objectclass=top
+objectclass=inetOrgPerson
+objectclass=organizationalPerson
+objectclass=person
+cn=S002283
+sn= LogicaInversa Bind User
+uid=-
+userPassword={SSHA}74aSjdiQHHY6kkoAwDwX6d0/Cwk5eA/n6bg0PVCikOkD7jQGbEt1pw==
+
+cn=LOGISTICAINVERSA_PRO_US_AUTHMERCHANTS,ou=Roles,ou=logisticainversa,ou=Aplicaciones,o=public,o=correos,c=es
+objectclass=top
+objectclass=groupOfUniqueNames
+objectclass=correosRol
+cn=LOGISTICAINVERSA_PRO_US_AUTHMERCHANTS
+uniquemember=cn=root
+
+La contraseña funciona
+
+4. Configuración de IHS y fichero LDAP
+
+Hay que añadir el modulo LoadModule ibm_ldap_module modules/mod_ibm_ldap.so
+
+WebService
+
+Servidor 01	pxz113
+Servidor 02	pxz114
+Listener port servidor 01	pxz113.correosext.local:20187
+Listener port servidor 02	pxz114.correosext.local:20187
+¿SSL Enable?	https
+Certificado servidor	logisticainversa.correos.es ---> Esta pasarela es de entrada por lo que el certificado de servidor tendría que estar firmado por CA externa.
+                                                         Sin embargo en esta pasarela se ha configurado wsout.correos.es (como si fuera de salida). 
+							 De momento se deja así
+
+CA	Instala la CA correspondiente al servidor 'esbdmzpro.correos.es' No hace falta son las internas de Correos.
+Directorio base	/aplicaciones/web/logisticainversa
+Home config	/opt/WebSphere/HTTPServer85/conf
+Fichero de configuración del proxy	httpd_logisticainversa.conf
+¿Requiere autenticación LDAP?	Sí
+
+Fichero de configuración LDAP	ldap/ldap_logisticainversa.prop
+Cláusula Location	"<Location />
+      LDAPConfigFile /opt/WebSphere/HTTPServer85/conf/ldap/ldap_logisticainversa.prop
+      AuthType Basic
+      AuthName ""Introduzca usuario con derechos para acceder al contenido""
+      LDAPRequire group LOGISTICAINVERSA_PRO_US_AUTHMERCHANTS
+      Require valid-user
+</Location>"
+URL origen	https://logisticainversa.correos.es/
+URL destino	https://esbdmzpro.correos.es:7444/BKDMZP01/LogisticaInversa
+Método proxy	Proxypass
+
+Información para configuración LDAP
+
+Localización del fichero	/opt/WebSphere/HTTPServer85/conf/ldap/ldap_logisticainversa.prop
+ldap.realm			TDSDMZ
+ldap.URL			ldaps://tdsdmz.correosext.local:636/ou=empresas,ou=usuarios,o=public,o=correos,c=es
+ldap.group.URL			ldaps://tdsdmz.correosext.local:636/ou=roles,ou=logisticainversa,ou=aplicaciones,o=public,o=correos,c=es
+ldap.transport			SSL
+ldap.application.authType	Basic
+ldap.application.DN		cn=S002283,ou=logisticainversa,ou=aplicaciones,o=public,o=correos,c=es
+ldap.application.password.stashFile	/opt/WebSphere/HTTPServer85/conf/ldap/S002283.sth  ---> hay que crearlo
+ldap.user.authType		BasicIfNoCert
+ldap.user.name.filter		(&(uid=%v1)(objectclass=inetOrgPerson))
+ldap.user.cert.filter		(&(cn=%v1)(objectclass=inetOrgPerson))
+ldap.group.name.filter		(&(cn=%v1)(objectclass=groupOfUniqueNames))
+ldap.group.memberAttributes	member uniquemember
+ldap.idleConnection.timeout	600
+ldap.waitToRetryConnection.interval	300
+ldap.search.timeout		60
+ldap.cache.timeout		600
+ldap.key.fileName		/opt/WebSphere/HTTPServer85/conf/ldap/tdsdmz.correosext.local.kdb
+ldap.key.file.password.stashFile	/opt/WebSphere/HTTPServer85/conf/ldap/tdsdmz.correosext.local.sth
+ldap.key.label			tdsdmz.correosext.local
+ldap.group.memberattribute	uniquegroup
+ldap.group.dnattributes		groupofnames groupofuniquenames
+ldap.group.search.depth		1
+
+5. Configuracion de fichero tdsum
+
+Contenedor LDAP: 	iris6
+Usuario bind: 		S002283
+Sufijo Rol: 		AUTHMERCHANTS
+Entorno operación: 	pxz113_pxz114
+Fichero a crear: 	/etc/opt/tdsum/tdsum_iris6.conf ---> Se tiene que llamar como la pasarela para que funcione
+Permisos fichero: 	rw-------
+TDSUM_Ldaphost: 	tdsdmz.correosext.local
+TDSUM_KdbFile: 		/etc/opt/tdsum/tdsdmz.correosext.local.kdb
+TDSUM_BindDN: 		cn=Snnnnnn,ou=iris6,ou=aplicaciones,o=public,o=correos,c=es
+Usuario actualizador	cn=S002266,ou=merchants,ou=aplicaciones,o=public,o=correos,c=es
+
+Hay que crear fichero logisticainversa_users vacío para que funcione tdsum
+
+
+Prueba 
+
+1. Creamos usuario pruebaWS (pruebaWS)
+wasadm@pxz113:/etc/opt/tdsum$ sudo /usr/local/bin/tdsum -f /etc/opt/tdsum/tdsum_logisticainversa.conf add pruebaWS
+Operacion: Aniadir usuario 'pruebaWS'
+Credenciales para la operacion: 'cn=S002266,ou=merchants,ou=aplicaciones,o=public,o=correos,c=es'
+Contenedor: 'ou=empresas,ou=usuarios,o=public,o=correos,c=es'
+Comprobando si existe el usuario...
+Usuario no encontrado (OK)
+Introduce contrasenia para el usuario uid=pruebaWS:
+Repite la contrasenia:
+Aniadiendo usuario...
+Operation 0 adding new entry uid=pruebaWS,ou=empresas,ou=usuarios,o=public,o=correos,c=es
+
+Operacion completada con exito!
+
+
+Lo mapeamos
+wasadm@pxz113:/etc/opt/tdsum$ sudo /usr/local/bin/tdsum -f /etc/opt/tdsum/tdsum_logisticainversa.conf map pruebaWS
+Operacion: Mapear usuario 'pruebaWS' al grupo de autorizacion
+Credenciales para la operacion: 'cn=S002283,ou=logisticainversa,ou=aplicaciones,o=public,o=correos,c=es'
+Contenedor: 'ou=empresas,ou=usuarios,o=public,o=correos,c=es'
+Grupo de autorizacion: 'cn=LOGISTICAINVERSA_PRO_US_AUTHMERCHANTS,ou=Roles,ou=logisticainversa,ou=Aplicaciones,o=public,o=correos,c=es'
+Buscando usuario en grupo de autorizacion...
+Operation 0 modifying entry cn=LOGISTICAINVERSA_PRO_US_AUTHMERCHANTS,ou=Roles,ou=logisticainversa,ou=Aplicaciones,o=public,o=correos,c=es
+ldap_modify: Insufficient access
+
+Tampoco puede mapear.
+
+28 de noviembre. El usuario está mal creado. Se abre incidencia a Soporte Gestión de Identidades
+----
+nos comentan desde IBM que hay que hacer lo siguiente:
+
+Ya veo que es lo que pasa: en PRO, el usuario bind de logística externa está mal creado:
+
+cn=S002283,ou=logisticainversa,ou=Aplicaciones,o=public,o=correos,c=es
+ibm-allgroups=cn=TDS_PRO_AD_LECTEXTLOGISTICAINVERSA,ou=roles,ou=umgt,ou=aplicaciones,o=public,o=correos,c=es
+ibm-allgroups=cn=TDS_PRO_AD_TOTSINLOGISTICAINVERSA,ou=roles,ou=umgt,ou=aplicaciones,o=public,o=correos,c=es
+
+Acciones para remediarlo (mediante incidencia a SGID)
+
+1.	Desmapear el usuario cn=S002283,ou=logisticainversa,ou=Aplicaciones,o=public,o=correos,c=es del grupo cn=TDS_PRO_AD_LECTEXTLOGISTICAINVERSA,ou=roles,ou=umgt,ou=aplicaciones,o=public,o=correos,c=es
+2.	Mapear el usuario cn=S002283,ou=logisticainversa,ou=Aplicaciones,o=public,o=correos,c=es al grupo cn=TDS_PRO_AD_LECTEXTUE,ou=roles,ou=umgt,ou=aplicaciones,o=public,o=correos,c=es
+
+La acción 1 quita un grupo innecesario, ya que el TDS_PRO_AD_TOTSINLOGISTICAINVERSA otorga esos permisos (y más). La acción 2 le habilita para explorar la rama de usuarios de empresa, necesario para poder mapear
+
+en caso de duda hablar con jorge nuñez: jorge.nunez@es.ibm.com
+-----------------------------------------------------------------
+
+PRE:
+Flujo
+https://logisticainversapre.correos.es->  https://esbdmzpre.correos.es:7444/BKDMZT01/LogisticaInversa -> https://wsoutpre.correos.es:20125/ipclogisticainversa ->  https://crp-uat.ipc.be/crp-ws/services/crp/labelRequest/1.0 
+
+PRO:
+Esta pasarela llama a https://esbdmzpro.correos.es:7444/BKDMZP01/LogisticaInversa que a su vez llama de nuevo a la pasarela de logisticainversa_salida, https://wsout.correos.es:20189/logisticainversa 
+
+
+
+============================================================================
+CRQ000000121544 PRE - POST - Limitar Acceso A Ws Desde Red Interna - Preparacion del cambio --> HECHO por Carmelo.
+
+txp351
+
+Por favor se solicita limitar las conexiones permitidas a los siguientes WS de PoST (únicamente a ellos) y tiene que estar bloqueado a nivel de "Frontal Web" ( YA realizado análisis en la secuencia anterior)
+
+Las IPs a las cuales hay que dejar el acceso en PRE serían las siguientes:
+
+	193.148.150.17
+	 10.97.8.16
+	 10.97.8.17	
+	 10.97.9.14
+	 10.97.9.15
+	 10.97.9.25
+	 10.97.4.25
+	 10.97.9.4
+
+Los WS de PRE son los siguientes:
+
+https://postpre.correospre.es/arsys/services/ARService?server=cmdbadminpre&webService=HPD_IncidentInterface_Create_WS
+
+https://postpre.correospre.es/arsys/services/ARService?server=cmdbadminpre&webService=HPD_IncidentInterface_WS 
+
+
+Implementación: 
+
+        <Location /contexto_WS>
+                Order allow,deny
+		Deny from all
+                Allow from "IPs indicadas"
+        </Location> 
+
+
+
+CRQ000000121440 PRO POST - Limitar Acceso A Ws Desde Red Interna - Preparacion del cambio --> Hecho por Carmelo
+
+pxp351,pxp352
+
+Por favor se solicita limitar las conexiones permitidas a los siguientes WS de PoST (únicamente a ellos) y tiene que estar bloqueado a nivel de "Frontal Web" (ver análisis en la secuencia anterior)
+
+Las IPs a las cuales hay que dejar el acceso en PRO serían las siguientes:
+
+
+	 10.97.1.30
+	 10.97.1.45
+	 10.97.2.77
+	 10.97.1.42
+	 10.97.1.43
+	 10.97.1.40
+	 10.97.1.30
+	 10.97.0.8
+	 10.97.0.9
+	 10.97.0.10
+	 10.97.0.11
+	 10.97.1.16
+	 10.97.1.17
+	 10.97.1.28
+	193.148.147.138
+	193.148.147.139
+
+Los WS de PRO son los siguientes:
+
+https://post.correos.es/arsys/services/ARService?server=cmdbadminpro&webService=HPD_IncidentInterface_Create_WS
+
+https://post.correos.es/arsys/services/ARService?server=cmdbadminpro&webService=HPD_IncidentInterface_WS
+
+Implementación: 
+
+        <Location /contexto_WS>
+                Order allow,deny
+		Deny from all
+                Allow from "IPs indicadas"
+        </Location>
+
+
+10 de septiembre
+
+CRQ000000122476 SC_ICP SKRILL.PRE La hizo Jorge
+
+Servidor 01			txz113
+Listener port servidor 01	wsoutpre.correosextpre.local:20335
+¿SSL Enable?			https
+Certificado servidor		wsoutpre.correosextpre.local 
+Certificado cliente		n/a
+CA				Instala la CA correspondiente a los servidores adjuntos al cambio, y definidos por seguridad en la tarea con secuencia 10.
+Directorio base			/aplicaciones/web/sc_icpskrill
+Home config			/opt/WebSphere/HTTPServer85/conf
+Fichero de configuración del proxy	httpd_sc_icpskrill.conf
+¿Requiere autenticación LDAP?	No
+
+Contextos	"Configurar los tres contextos definidos a continuación:
+SKRILL_PAGO, SKRILL_CONSULTA, SKRILL_DEVOLUCION"
+URL origen_1			https://wsoutpre.correosextpre.local:20335/SKRILL_PAGO
+URL destino_1			https://pay.skrill.com
+URL origen_2			https://wsoutpre.correosextpre.local:20335/SKRILL_CONSULTA
+URL destino_2			https://www.skrill.com/app/query.pl
+URL origen_3			https://wsoutpre.correosextpre.local:20335/SKRILL_DEVOLUCION
+URL destino_3			https://www.skrill.com/app/refund.pl
+Método proxy			ProxyRemote (http://proxyapp.correos.es)
+
+
+============================================
+11 de septiembre
+
+SC_ICPSKRILL PRO
+
+No hay comunicación con sc-icpdzpre.correos.es
+
+(78)Connection timed out: proxy: HTTPS: attempt to connect to 193.148.150.68:443 (sc-icpdzpre.correos.es) failed
+
+Los nuevos destinos hay problemas de handshake
+ SSL0266E: Handshake Failed, Could not establish SSL proxy connection.
+
+=============================================
+29 de octubre
+
+CRQ000000119825 - Integración Oficina Elegida ECI - cambio IHS - TXZ113 - [PRE] 
+
+*Hora de inicio
+	29/10/2018 13:00
+*Hora de finalización
+	29/10/2018 14:00 
+
+
+1.- Servidor txz113, instancia httpd_envoficinaeci.conf 
+Se ha de modificar 
+
+ProxyPass /desactivarpuntoconveniencia https://webservices.nft.elcorteingles.es:465/sitetostore/rest/desactivarpuntoconveniencia
+ProxyPassReverse /desactivarpuntoconveniencia https://webservices.nft.elcorteingles.es:465/sitetostore/rest/desactivarpuntoconveniencia
+
+por 
+
+ProxyPass /desactivarpuntoconveniencia https://webservicespre.elcorteingles.es:465/sitetostore/rest/desactivarpuntoconveniencia
+ProxyPassReverse /desactivarpuntoconveniencia https://webservicespre.elcorteingles.es:465/sitetostore/rest/desactivarpuntoconveniencia
+
+Posteriormente hay que reiniciar la instancia de IHS
+
+2.- Validar correcto funcionamiento y adjuntar evidencia
+
+No se tiene acceso a ninguno de los dos destinos ni el antiguo ni el nuevo.
+
+=======================================================
+30 de octubre
+
+CRQ000000126076
+Modficación pasarela apitrack pxz113/pxz114
+
+Se debe modificar la configuración de la URL apitrack.correos.com/apitrack
+		Actualmente apuntando a https://esbdmzpro.correos.es:7444/BKDMZP01/AMAZON/API
+		Debe apuntar a https://esbpro.correos.es:7849/BKWSP01/AMAZON/API
+llama al broker y el flujo del broker llama a Mercurio
+
+=========================================================================================================
+5 de noviembre IRIS6PFS iris6prepaidfin DES/PRE Estaba ya creada solo ha hecho falta modificar el puerto.
+
+CRQ000000128628 tlz113.  IRIS6V2 - APERTURA COMUNICACIONES Inspirarse en las la configuración hecha en plz113_plz114 para las directivas proxyRemote
+
+Según nos solicitan en la INC000003341072, el proveedor PFS nos ha informado que van a deshabilitar todos los protocolos/cifrados inseguros dejando exclusivamente activado el protocolo TLSv1.2 en la Aplicación IRIS en DES y PRE.
+
+Se han estado realizado pruebas con la pasarela IHS y se ha comprobado que no está enviando ciertas extensiones TLS que el IIS de PFS debería de saber interpretar por lo que estamos obteniendo un RESET cuando se ejecuta negocia el handshake (justo cuando se envía el ClientHello).
+Por ello es necesario migrar pasarela IHS a Apache.
+
+
+Servidor 01			tlz113
+
+Listener port servidor 01		wsout2pre.correosextpre.local:20501
+
+¿SSL Enable?				https
+Certificado servidor			wsout2pre.correosextpre.local
+Certificado cliente			n/a
+
+Directorio base				/aplicaciones/web/iris6prepaidfin
+Home config				/etc/httpd/conf
+
+Fichero de configuración del proxy	httpd_iris6prepaidfin.conf
+¿Requiere autenticación LDAP?		No
+Fichero de configuración LDAP		n/a
+
+URL origen				https://wsout2pre.correospre.es:20501/iris6prepaidfin
+URL destino				https://staging.prepaidfinancialservices.com/accountapiv2/service.asmx
+Método proxy				ProxyRemote (http://proxyapp.correos.es)
+
+
+=================================================================================================================
+6 de noviembre SGIE PRO plz113/plz114 CRQ000000126377 
+Petición de PRE CRQ000000126442
+
+Se solicita el alta de pasarela Apache para las comunicaciones entre:
+
+- Desde: SGIE-Interfaces
+- Desde: SGIE-ONLINE
+- Hasta: https://geocode.arcgis.com/arcgis/
+
+También es necesario la baja de la pasarela IHS que se solicitó en la petición INC000003092521 (sgiearcgis)
+
+Listener port servidor 01		plz113.correosext.local:20345
+Listener port servidor 02		plz114.correosext.local:20345
+¿SSL Enable?				https
+Certificado servidor			wsout2.correosext.local
+Certificado cliente			n/a
+CA					n/a
+Directorio base				/aplicaciones/web/sgiearcgis
+Home config				/etc/httpd/conf
+Fichero de configuración del proxy	httpd_sgiearcgis.conf
+¿Requiere autenticación LDAP?		No
+Fichero de configuración LDAP		n/a
+Cláusula Location			n/a
+URL origen				https://wsout2.correosext.local:20345/arcgis
+URL destino				https://geocode.arcgis.com/arcgis/
+Método proxy				ProxyRemote (http://proxyapp.correos.es)
+URL prueba				
+https://geocode.arcgis.com/arcgis/
+
+Las pruebas de conexión funcionan.
+==================================================================================================================
+Orange preregistros httpd_preregistroenvios.conf pxz113/pxz114
+
+Para tracear tráfico. Las pruebas las van a hacer desde la dirIP  90.160.7.66 90.160.44.194
+
+
+sudo tcpdump -nni en4 -s 0 '((tcp) and ((host 90.160.7.66) or (host 90.160.44.194)))' -w preregistroenvios.pcap &
+
+A la pasarela podrían no llegar con las IPs públicaS, sino con la IP del balanceador.
+
+13 noviembre: no se sabe si tienen que ir las peticiones a httpd_preregistroenvios.conf o httpd_ps2c.conf
+El F5 tiene solo una regla para preregistroenvios.correos.es:443 ---> dependiendo del campo autorización que recibe en la cookie, envía la petición a un sitio u otro.
+
+curl  https://pxz113.correosext.local:20221/preregistroenvios -k -u w81061477:EMCTZXG1 (Así hace un get)
+curl -X POST https://pxz113.correosext.local:20221/preregistroenvios -k -u w81061477:EMCTZXG1 (Así hace un post)
+curl https://pxz113.correosext.local:20221/preregistroenvios?wsdl -k -u w81061477:EMCTZXG1 (Para invocar WS)
+===================================================================================================================
+14 de noviembre
+
+
+
+CRQ000000120926 Priorizada atcliente - DES - Creación de entorno para nueva aplicación con Spring Boot
+
+Red interna PRE
+===============
+
+Servidor 01			TLP391					Servidor donde hay que realizar la configuración		
+Listener port servidor 01	TLP391atcliente.correos.es:20329	FQHNs + puertos de escucha del servicio		
+¿SSL Enable?			https					A configurar en el virtual host		
+Certificado servidor		atclienteripre.correos.es		Certificado con propósito de servidor a instalar en el web server		
+CA				Instala la CA correspondiente al servidor 'atclienteripre.correos.es'			
+Directorio base			/aplicaciones/web/atclienteripre		Directorio base del proxy webservice		
+Home config			/etc/httpd/conf	---> Está mal es /opt/jboss/httpd		
+Fichero de configuración del proxy	httpd_atclienteripre.conf	Fichero de configuración del web server		
+URL origen	https://atclienteripre.correos.es:20329/solicitudes	URL con el que se invocará al proxy		
+URL destino	http://TLA471:8000			
+Método proxy	Proxypass	Método de proxy		
+URL prueba	(Realizar una comprobación básica)			
+Resultado URL de prueba	No disponible	
+
+---
+Se ha configurado con otro listener de momento: atclienteripre.correos.es:20329
+
+
+wasadm@tlp391:/aplicaciones/web/atclienteripre/logs$  curl https://atclienteripre.correos.es:20329/test.html --insecure
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<!-- saved from url=(0032)http://edoc.correos.es/test.html -->
+<HTML><HEAD><META content="IE=5.0000" http-equiv="X-UA-Compatible">
+<TITLE>Comprobacion de conexion</TITLE>
+<META content="text/html; charset=windows-1252" http-equiv=Content-Type>
+<STYLE type=text/css>H1 {
+        FONT-FAMILY: Arial, Helvetica, Sans-Serif; TEXT-ALIGN: center
+}
+P {
+        TEXT-INDENT: 20px
+}
+</STYLE>
+
+<META name=GENERATOR content="MSHTML 10.00.9200.16750"></HEAD>
+<BODY bgColor=#ffffcc text=#000000>
+<H1>Comprobacion conexion<H1></BODY></HTML>
+
+wasadm@tlp391:/aplicaciones/web/atclienteripre/logs$  curl https://atclienteripre.correos.es:20329/solicitudes --insecure
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML 2.0//EN">
+<html><head>
+<title>503 Service Temporarily Unavailable</title>
+</head><body>
+<h1>Service Temporarily Unavailable</h1>
+<p>The server is temporarily unable to service your
+request due to maintenance downtime or capacity
+problems. Please try again later.</p>
+</body></html>
+
+
+		
+
+
+Red DMZ PRE
+===========
+
+Servidor 01			tl113
+Listener port servidor 01	tlz113.correosextpre.local:20331
+¿SSL Enable?			https
+Certificado servidor		atclientedes.correos.es
+Certificado cliente		n/a
+CA				Instala la CA correspondiente al servidor 'atclienterides.correos.es'
+Directorio base			/aplicaciones/web/atclientedes
+Home config			/etc/httpd/conf
+Fichero de configuración del proxy	httpd_atclientedes.conf
+¿Requiere autenticación LDAP?		No
+Fichero de configuración LDAP		n/a
+Cláusula Location		n/a
+URL origen			https://atclientedes.correos.es:20331/solicitudes
+URL destino			https://atclienterides.correos.es:20331/solicitudes
+Método proxy			Proxypass
+URL prueba	(Realizar una comprobación básica)
+Resultado URL de prueba	No disponible
+Operación general	Alta
+Observaciones arquitectura	n/a
+Observaciones ingeniería	n/a
+
+
+Red interna Desa
+=================
+
+Servidor 01				DLP391
+Listener port servidor 01		DLP391atcliente.correos.es:20331  ---> Listen es atclienterides.correos.es
+¿SSL Enable?				https
+Certificado servidor			atclienterides.correos.es
+CA	Instala la CA correspondiente al servidor 'atclienterides.correos.es'
+Directorio base				/aplicaciones/web/atclienterides
+Home config				/etc/httpd/conf
+Fichero de configuración del proxy	httpd_atclienterides.conf
+URL origen				https://atclienterides.correos.es:20331/solicitudes
+URL destino				http://dla471.correospre.es:8000
+Método proxy				Proxypass
+URL prueba	(Realizar una comprobación básica)
+Resultado URL de prueba	No disponible
+Operación general			Alta
+Observaciones arquitectura	n/a
+Observaciones ingeniería	n/a
+
+
+
+
+
+
+=======================================================================================================
+16 de noviembre 
+CRQ000000129595 cambiar en tlz113 la pasarela httpd_sc_icpskrill.conf para que invoque a destino directamente sin pasar por proxyapp.correos.es. Ya se realizó.
+
+
+=======================================================================================================
+16 noviembre
+CRQ000000126541 Migración pasarela a IHS 8.5 httpd_ov2pagcons.con pxz115/116
+
+1. Primero se tiene que ejecutar tcpdump de la configuración del IHS en pxz115 y espero que haya alguna petición
+
+   sudo tcpdump -i en4 -w /aplicaciones/web/ov2pagcons/logs/tcpdump_pxz115.pcap tcp and host 10.130.40.15 &
+[2] 21757986
+
+18 de diciembre
+sudo  tcpdump -nni en4 -s 0 -w /aplicaciones/web/ov2pagcons/logs/tcpdump_pxz115.pcap tcp and host 10.130.40.15 &
+
+
+=======================================================================================================
+INC000003365265 FRASADMONPUB pxz113/pxz114
+
+Se añaden rutas estáticas: "Este problema en otras ocasiones se ha debido a tráfico asimetrico, y se ha solucionado dando de alta una ruta al host destino directa al FW de internet,
+
+Hemos añadido la ruta en caliente a la  pxz113 y pxz114 y de momento todas las peticiones van con 200 OK"
+
+
+pxz113:/opt/WebSphere/HTTPServer85 # route add -host 185.73.172.48 193.148.147.129
+193.148.147.129 host 185.73.172.48: gateway 193.148.147.129
+pxz113:/opt/WebSphere/HTTPServer85 # netstat -nr | grep 185.73.172.48
+185.73.172.48      193.148.147.129   UGH       0         0 en4      -      -
+
+
+
+=========================================================================================================
+INC000003388857 PRE ATEX de la DGT
+
+Se llama desde IRIS6
+https://woustpre.correos.es:20214/iris6dgtatex5
+
+
+Aparte, ¿nos podéis confirmar que salimos con la IP 193.148.150.17 ?
+
+httpd_iris6dgt.conf
+
+
+=============================================================================================================
+CRQ000000129143
+
+Implementar la sustitución del endpoint solicitada en el documento de referencia. Se trata de sustituir la invocación al endpoint ""gestionaconcorreos.com"" por ""www.correosmodify.com""
+
+>>> Entorno de operación <<<
+tlz113.httpd_nuevawebgcc.conf (<VirtualHost wsout2pre.correos.es:20337>)
+
+Servidor 01			tlz113
+Listener port servidor 01	wsout2pre.correosextpre.local:20337
+¿SSL Enable?			https
+Certificado servidor		wsout2pre.correosextpre.local
+Certificado cliente		n/a
+CA				n/a
+Directorio base			/aplicaciones/web/nuevawebgcc
+Home config	/etc/httpd/conf
+Fichero de configuración del proxy	httpd_nuevawebgcc.conf
+¿Requiere autenticación LDAP?	No
+Fichero de configuración LDAP	n/a
+Cláusula Location	n/a
+URL origen	https://wsout2pre.correosextpre.local:20337/envio
+URL destino	https://www.correosmodify.com/envio
+Método proxy	ProxyRemote (http://proxyapp.correos.es)
+URL prueba	(Realizar una comprobación básica)
+Resultado URL de prueba	No disponible
+Operación general	Modificación
+
+=================================================================================================================
+CRQ000000129549 
+
+Tras las conversaciones mantenidas y las pruebas realizadas, la URL definitiva para la redirección del Framework de BRUJULA sería:
+
+https://owsssfov2pre.correos.es/brujula   que redirige a   https://brujulapre.correos.es/fw 
+
+Hay que montar una pasarela en DMZ para que los usuarios externos accedan al Servidor web de brújula.
+
+
+Servidor 01				txz335
+¿SSL Enable?				https
+CA					Instala la CA correspondiente al servidor 'brujulapre.correos.es'
+Directorio base				/aplicaciones/web/owsssfov2
+Home config				/opt/WebSphere/HTTPServer85/conf
+Fichero de configuración del proxy	httpd_owsssfov2.conf
+
+
+URL origen				http://owscsbov2pre.correos.es/brujula
+URL destino				https://brujulapre.correos.es/fw
+
+
+Configuración primer contexto
+
+Se configura el nuevo proxypass para brujula en owsssfov2, se ha entendido que el campo ULOrigen del documento de configuración contenía una errata:  http://owscsbov2pre.correos.es/brujula
+
+ya que el origen ha de ser la instancia que se esta configuranco correspondiendose con : owsssfov2.
+
+De modo que se ha añadido  en el virtualhost no seguro ( http ) 
+
+#CRQ000000129549
+ProxyPass /brujula https://brujulapre.correos.es/fw
+ProxyPassReverse /brujula https://brujulapre.correos.es/fw
+
+
+Adicionalmente se revisa que el kdb owsssfov2 contiene las CA de brujula que son las de correos. Se inserta  en el archivo de configuración : 
+
+ProxyPass /brujula https://brujulapre.correos.es/fw
+ProxyPassReverse /brujula https://brujulapre.correos.es/fw
+
+
+Se adjuntan evidencias.
+
+Saludos
+
+
+Configuración segundo contexto
+
+Han modificado la URL orgin
+
+URL origen	https://owsssfov2pre.correos.es/brujula
+URL destino	https://brujulapre.correos.es/fw
+
+URL de pruebas  "https://brujulapre.correos.es/fw/js/fwBrujula.js
+                https://owsssfov2pre.correos.es/brujula/js/fwBrujula.js"
+
+---------------------------------------------------------------
+CRQ000000129556 
+
+Tras las conversaciones mantenidas y las pruebas realizadas, la URL definitiva para la redirección del Framework de BRUJULA sería:
+
+https://www.correos.es/brujula   que redirige a   https://brujula.correos.es/fw 
+
+Hay que montar una pasarela en DMZ para que los usuarios externos accedan al Servidor web de brújula.
+
+
+1º Configuración
+
+Se configura el servidor añadiendo proxypass solicitado para brujula en www.correos.es.
+
+Se deja preparado el fichero : 
+
+/opt/WebSphere/HTTPServer85/conf/httpd_owsssfov2.conf_CRQ000000129556
+
+
+
+#CRQ000000129556 TAS000000826472
+ProxyPass /brujula https://brujula.correos.es/fw
+ProxyPassReverse /brujula https://brujula.correos.es/fw
+
+        #----------------------------------------------------------------
+        #       Fin: REDIRECCIONES 'http' www.correos.es
+        #----------------------------------------------------------------
+
+2ª Configuración
+
+Se modifica el Proxy
+
+URL origen	https://www.correos.es/brujula
+URL destino	https://brujula.correos.es/fw
+
+
+URLs de prueba
+
+https://brujula.correos.es/fw/js/fwBrujula.js
+https://www.correos.es/brujula/js/fwBrujula.js
+
+--------------------------------------------------------------------
+CRQ000000126445 
+
+Realizar captura tcpdump para el IHS v6.1, cuyos datos se describen en el entorno de operación. Identificar protocolo y cypherspec a cada endpoint (destino). Adjuntar logs y dumps para posibles análisis conjuntos con Correos
+
+>>> Entorno de operación <<<
+Hosts: pxz115_pxz116
+Fichero de configuración: /opt/WebSphere/HTTPServer61/conf/httpd_sgiecex.conf
+Endpoint a monitorizar: 10.130.25.102 (www.correosexpress.com)
+
+1. Primero se tiene que ejecutar tcpdump de la configuración del IHS en pxz115 y espero que haya alguna petición
+
+   sudo tcpdump -i en4 -w /aplicaciones/web/sgiecex/logs/tcpdump_pxz115.pcap tcp and '((host 10.130.25.102) or (host www.correosexpress.com))'  & --> no escribe traza SSL.
+
+   sudo tcpdump -nni en4 -s 0 -w /aplicaciones/web/sgiecex/logs/tcpdump_pxz115.pcap tcp and '((host 10.130.25.102) or (host www.correosexpress.com))'  & ---> no escribe traza SSL
+
+   sudo  tcpdump -nni en4 -s 0 -w /aplicaciones/web/sgiecex/logs/tcpdump_pxz115.pcap host 10.130.25.102 or host www.correosexpress.com &
+[1] 24707262
+
+---------------------------------------------------------------------
+CRQ000000127946 CITYPAQ PRE tlz113 30 de noviembre 
+
+
+Servidor 01			tlz113
+
+Listener port servidor 01	wsout2pre.correosextpre.local:20347
+¿SSL Enable?			https
+Certificado servidor		wsout2pre
+Certificado cliente		n/a
+CA	n/a
+Directorio base			/aplicaciones/web/actphomyhub
+Home config			/etc/httpd/conf
+Fichero de configuración del proxy	httpd_actphomyhub.conf
+¿Requiere autenticación LDAP?	No
+Fichero de configuración LDAP	n/a
+Cláusula Location	n/a
+URL origen 01			https://wsout2pre.correospre.es:20347/create-delivery
+URL destino 01			https://labs.homyhub.com/v1/CityPaqDeliveries/create-delivery
+Método proxy 01			ProxyRemote (http://proxyapp.correos.es)
+
+URL origen 02			https://wsout2pre.correospre.es:20347/close-delivery
+URL destino 02			https://labs.homyhub.com/v1/CityPaqDeliveries/close-delivery
+Método proxy 02			ProxyRemote (http://proxyapp.correos.es)
+
+Operación general	        Alta
+Observaciones arquitectura	n/a
+Observaciones ingeniería	n/a
+
+
+Estaba mal creada.
+Hay que añadir para que tenga token 19 de diciembre
+
+        RewriteEngine On
+        RewriteRule ^/create-delivery(.*)$ https://labs.homyhub.com/v1/CityPaqDeliveries/create-delivery$1 [P,L]
+        ProxyPassReverse /create-delivery  https://labs.homyhub.com/v1/CityPaqDeliveries/create-delivery
+
+
+        RewriteRule ^/close-delivery(.*)$ https://labs.homyhub.com/v1/CityPaqDeliveries/close-delivery$1 [P,L]
+        ProxyPassReverse /close-delivery  https://labs.homyhub.com/v1/CityPaqDeliveries/close-delivery
+
+
+Prueba destino
+
+
+INC000003443036/ INC000003301633 se añaden endpoints para autenticación por user/pwd.
+curl -X POST --header 'Content-Type: application/json' --header 'Accept: application/json' -d '{"username":"USER","password":"PASSWORD"}' 'https://labs.homyhub.com/v1/users/login'
+Todavía no hecho??
+---------------------------------------------------------------------
+CRQ000000131106
+ATCLIENTE RED INTERNA DES 30 de noviembre
+
+dlp391 httpd_atclienterides.conf
+
+
+https://atclienterides.correos.es:443
+http://dla471.correospre.es:8000
+
+
+ATCLIENTE DMZ DES
+
+Servidor tl113
+Listener port servidor 01	atclientedes.correos.es:20331
+¿SSL Enable?	https
+Certificado servidor	atclientedes.correos.es
+Certificado cliente	n/a
+CA	Instala la CA correspondiente al servidor 'atclientedes.correos.es'
+Directorio base	/aplicaciones/web/atclientedes
+Home config	/etc/httpd/conf
+Fichero de configuración del proxy	httpd_atclientedes.conf
+¿Requiere autenticación LDAP?	No
+Fichero de configuración LDAP	n/a
+Cláusula Location	n/a
+URL origen	https://atclientedes.correos.es:20331
+URL destino	https://atclienterides.correos.es:443
+Método proxy	Proxypass
+
+----------------------------------------------------------------------
+CRQ000000120930 ATCLIENTE RED INTERNA PRO
+
+Modificar configuración Apache Red Interna eliminando el contexto /solicitudes
+
+plp393/plp394
+URL origen	https://atclienteri.correos.es:443
+URL destino	HTTPs://PLA471:8000/
+
+
+ATCLIENTE DMZ plz113/plz114
+URL origen  https://atcliente.correos.es:20329
+URL destino https://atclienteri.correos.es
+
+/etc/httpd/conf/httpd_atcliente.conf
+                                            
+===================================================================
+ov2pagop ---> pxz115/pxz116   Va contra conexflow       
+
+
+====================================================================
+INC000003414907 ATCLIENTE PRE  RED INTERNA  7 diciembre
+
+
+
+Servidor 01			TLP391
+Listener port servidor 01	TLP391atcliente.correospre.es:443
+¿SSL Enable?			https
+Certificado servidor		atclienteripre.correos.es
+CA				Instala la CA correspondiente al servidor 'atclienteripre.correos.es'
+Directorio base			/aplicaciones/web/atclienteripre
+Home config			/etc/httpd/conf, está mal el correcto es /opt/jboss/httpd/httpd/conf/
+Fichero de configuración 	httpd_atclienteripre.conf
+URL origen			https://atclienteripre.correos.es:443
+URL destino			https://TLA471:8000/
+Método proxy			Proxypass
+URL prueba	(Realizar una comprobación básica)
+Resultado URL de prueba	No disponible
+Operación general	Alta
+Observaciones arquitectura	n/a
+Observaciones ingeniería	n/a
+                       
+
+=========================================================================
+RE: RV: Plan de migración de SRM PRO versión 1.1 - 28/11
+MIGUEL.SABIO  	to:	Y9BKKS838, antonio.rodriguez.santamaria	07/12/2018 17:06
+
+Cc:
+adrian.castillo, albano.piazza, alfredo.gil, angel.galan, arquitectura.integracion, carlos.calle, cgc, Correos.Service.Managers, cristina.cid, david.ochoa, desarrollo.integracion, EManonMa, fernando.chamorro, fernando.delafuente, francisco.magallanes, jesus.mayor, jose.manuel.prieto, juancarlos.chacon, julio.portillo, maria-jesus.cano, mariano.carmona, marta.martin, natalia.jimenez, roberto.lopez, sara.martin, sistemas.mq, sistemas.was, sistemas.windows, soporte.planificacion, soporte.sgid, puparelli, javier.alvarado, daniel.aragon
+	
+istemas WAS. Desconocemos la aplicación WAS donde hay que realizar esta modificación ¿Puedes aclararlo?
+
+cid:image004.gif@01D48E49.40185400
+
+ 
+
+Ahora mismo vuestro reverse proxy (Apache) en la DMZ PRO PLZ491/PLZ492 apunta contra el WD sapsrmwd.correos.es -  ip 10.97.2.25 (puertos 4443 y 7443) (ver esquema) y ahora debería apuntar a las siguientes url’s.
+
+ 
+
+·         proveedores.correos.es reapuntar a ip nueva 10.97.2.28 por el puerto 4443
+
+·         proveedorescert.correos.es reapuntar a la nueva ip 10.97.2.28 por el puerto 7442
+
+ 
+
+Esperamos que con estas aclaraciones quede claro lo que hay que hacer.
+
+==============================================================================
+Wizink ---> iris6citybank
+es externo, va al GAC
+==============================================================================
+CRQ000000130755 pxz115_pxz116.httpd_colabiris6.conf 10 de diciembre
+para la integración de NEXEA con el WS de IRIS en el entorno PRO.
+
+Se necesita configurar un nuevo balanceo+VHost para "https" concretamente(eligiendo puerto 20xxx y mismas reglas ProxyPass existentes en el VHost 'http') en la pasarela "onceiris6" (DMZ Colaboradoras - http://wsincol.correosext.local:20022/AdmisionChronoexpres )
+
+
+Servidor 01				pxz115
+Servidor 02				pxz116
+Listener port servidor 01		pxz115.correosext.local:20022, pxz115.correosext.local:20023
+Listener port servidor 02		pxz116.correosext.local:20022, pxz116.correosext.local:20023
+¿SSL Enable?				http, https
+Certificado servidor			wsincol.correosextpre.local
+Certificado cliente			n/a
+CA					Instala la CA correspondiente al servidor 'iris6ws.correos.es'
+Directorio base				/aplicaciones/web/colabiris6
+Home config				/opt/WebSphere/HTTPServer85/conf
+Fichero de configuración del proxy	httpd_colabiris6.conf
+¿Requiere autenticación LDAP?		No
+Fichero de configuración LDAP		n/a
+Cláusula Location			n/a
+URL origen 01				https://wsincol.correos.es:20023/AdmisionChronoexpres
+URL destino 01				https://iris6ws.correos.es/IntegracionIRIS/services/AdmisionChronoexpres
+Método proxy 01				Proxypass
+URL origen 02				https://wsincol.correos.es:20022/AdmisionChronoexpres ---> Esto debería ser http y ya está configurado.
+URL destino 02				http://iris6ws.correos.es/IntegracionIRIS/services/AdmisionChronoexpres
+Método proxy 02				Proxypass
+URL prueba				(Realizar una comprobación básica)
+Resultado URL de prueba			No disponible
+Operación general			Alta
+Observaciones arquitectura		n/a
+Observaciones ingeniería		n/a
+
+
+=================================================================================
+CRQ000000131213 SBX1 - SRM SUS - Configurar WSG
+
+Modificación de la pasarela en tlz491 httpd_sapsrmcert.conf
+
+La pasarela está configurada con contextos protegidos por certificados clientes.
+
+Las directivas necesarias para requerir autenticación por cliente son las siguientes:
+
+SSLCACertificateFile /opt/jboss/httpd/httpd/ssl/sapsrmcert/CAs/listaCAs.cer ** (obligatorio)
+
+Description:	File of concatenated PEM-encoded CA Certificates for Client Auth
+Syntax:	SSLCACertificateFile file-path
+Context:	server config, virtual host
+Status:	Extension
+Module:	mod_ssl
+
+This directive sets the all-in-one file where you can assemble the Certificates of Certification Authorities (CA) whose clients you deal with. These are used for Client Authentication. Such a file is simply the concatenation of the various PEM-encoded Certificate files, in order of preference. This can be used alternatively and/or additionally to SSLCACertificatePath.
+
+
+        <LocationMatch ^/(?!test.html)[^.]*$>
+                RequestHeader set SSL_CLIENT_CERT ""
+                SSLOptions +ExportCertData (obligatorio) +StdEnvVars +StrictRequire ** 
+                SSLVerifyClient require ** (obligatorio)
+                #INC000002203943
+                SSLRenegBufferSize 11000000
+                #SSLVerifyClient none
+                SSLVerifyDepth 10 **  (obligatorio)
+                RequestHeader set SSL_CLIENT_CERT "%{SSL_CLIENT_CERT}s" ** (obligatorio)
+        </LocationMatch>
+
+ 
+SSLProxyCACertificateFile /opt/jboss/httpd/httpd/ssl/sapsrmcert/CAs/listaCAs.cer
+This directive sets the all-in-one file where you can assemble the Certificates of Certification Authorities (CA) whose remote servers you deal with. These are used for Remote Server Authentication. Such a file is simply the concatenation of the various PEM-encoded Certificate files, in order of preference. This can be used alternatively and/or additionally to SSLProxyCACertificatePath.
+
+
+SSLProxyMachineCertificateFile /opt/jboss/httpd/httpd/ssl/sapsrm/clientenoproductivo.correos.es.pem --> Esta directiva es para la concetenación de varios certificados PEM-encoded que se usarán para la autenticación del servidor proxy a los servidores remotos. ---> cuando se configura el proxy seguro con autenticación por certificado cliente. No sé exactamente qué CAs debe contener: la de los certificados clientes + la CA del certificado del proxy Apache
+  He encontrado esto: The idea of this initial setup is to remove the client certificate requirement for each browser and the connection from Reverse proxy to back-end web server is authenticated.
+On the Apache we use the SSLProxyMachineCertificateFile setting which is the location of the Client Certificate on the Apache and it sends this certificate for authentication to the back-end.
+
+Estas dos últimas directivas, SSLProxyCACertificateFile y SSLProxyMachineCertificateFile, se usan cuando el Apache actúa como cliente, y el back-end tiene configurado autenticación de cliente.
+
+========================================================================
+CRQ000000130855 colabiris6.conf iris6once txz103 Pase a preproducción 13 de diciembre
+
+========================================================================
+CRQ000000126445 migración de la pasarela httpd_sgiecex.conf a IHS 8.5 pxz115/pxz116
+
+La tarea de configuración la hizo Carmelo. 
+Hay que seguir los mismos pasos que se hizo con uci y telefónica
+
+ sudo tcpdump -i en4 -w /aplicaciones/web/sgiecex/logs/tcpdump_pxz115.pcap tcp and '((host 10.130.25.102) or (host www.correosexpress.com))' &
+
+sudo  tcpdump -nni en4 -s 0 -w /aplicaciones/web/sgiecex/logs/tcpdump_pxz115.pcap host 10.130.25.102 or host www.correosexpress.com
+
+
+=========================================================================
+CRQ000000127887 httpd_actphomyhub.conf plz113/plz114
+
+1) Correospaq: añadir vhost  (*:2017x) para homyhub en la misma instancia en pxz335/6 y autorizar únicamente a las IPs de homyhub el acceso (filtrado IP en el FW)
+PRO: 51.254.206.229 y 51.255.225.38 
+PRE: 163.172.130.244
+
+2) ACTP: Pasarela de salida:
+Descripción: Añadir un nuevo reparto
+Dirección: ACTP -> HOMYHUB
+Prod Endpoint: https://api.homyhub.com/v1/CityPaqDeliveries/create-delivery?access_token=XXXXXXX
+Test Endpoint: https://labs.homyhub.com/v1/CityPaqDeliveries/create-delivery?access_token=XXXXXXX
+
+Descripción: Liquidacion de entrega
+Dirección: ACTP -> HOMYHUB
+Prod Endpoint: https://api.homyhub.com/v1/CityPaqDeliveries/close-delivery?access_token=XXXXXXX
+Test Endpoint: https://labs.homyhub.com/v1/CityPaqDeliveries/close-delivery?access_token=XXXXXXX
+
+
+========================================================================
+tlz113 carmenazure
+
+No funcionaba porque no se le pasaba el token de seguridad que se necesitaba para invocar a microsoft
+Se cambió el ProxyPass por Rewrite. Se tiene que añadir el $1 para que pase todo lo que llega
+
+ ProxyRemote https://login.microsoftonline.com/B2CCarmenPre.onmicrosoft.com/oauth2/v2.0  http://proxy.correos.es
+ RewriteEngine On
+ RewriteRule ^/carmenazure(.*)$ https://login.microsoftonline.com/B2CCarmenPre.onmicrosoft.com/oauth2/v2.0$1 [P,L]
+ ProxyPassReverse  /carmenazure https://login.microsoftonline.com/B2CCarmenPre.onmicrosoft.com/oauth2/v2.0
+
+=========================================================================
+CRQ000000130940 IRIS6 DGT PagoTasasMasivoWS Creada por Carlos Blanco
+
+txz113.httpd_iris6dgt.conf
+
+
+17 de diciembre. Se añaden CAs del destino
+
+==========================================================================
+
+CRQ000000130403 Configurar webservice plz491/plz492 SAPPIPACT 20 de diciembre
+
+
+
+Servidor 01				plz491
+Servidor 02				plz492
+Listener port servidor 01		plz491.correosext.local:20353
+Listener port servidor 02		plz492.correosext.local:20353
+¿SSL Enable?				https
+Certificado servidor			wsout3.correosext.local
+Certificado cliente			n/a
+CA					Instala la CA correspondiente al servidor 'sede.gobcan.es' (No hace falta, por defecto se confía)
+Directorio base				/aplicaciones/web/sappiatc
+Home config				/opt/jboss/httpd/httpd/conf
+Fichero de configuración del proxy      httpd_sappiatc.conf
+¿Requiere autenticación LDAP?		No
+Fichero de configuración LDAP		n/a
+Cláusula Location			n/a
+URL origen 01				https://wsout3.correos.es:20353/SuministroFacturasEmitidas
+URL destino 01				https://sede.gobcan.es/tributos/middleware/services/sii/SiiFactFEV1SOAP
+Método proxy 01				ProxyRemote (http://proxyapp.correos.es)
+
+URL origen 02				https://wsout3.correos.es:20353/SuministroFacturasRecibidas
+URL destino 02				https://sede.gobcan.es/tributos/middleware/services/sii/SiiFactFRV1SOAP
+Método proxy 02				ProxyRemote (http://proxyapp.correos.es)
+
+URL origen 03				https://wsout3.correos.es:20353/SuministroPagosRecibidos
+URL destino 03				https://sede.gobcan.es/tributos/middleware/services/sii/SiiFactPAGV1SOAP
+Método proxy 03				ProxyRemote (http://proxyapp.correos.es)
+
+URL prueba	(			Realizar una comprobación básica)
+Resultado URL de prueba			No disponible
+Operación general			Alta
+Observaciones arquitectura		n/a
+Observaciones ingeniería		n/a
+
+===================================================================================
+INC000003431815 Instalar CA intermedia aeatCTel pxz113/pxz114 19 diciembre
+
+sappiaeat está tb en pxz113/pxz114
+
+===================================================================================
+CRQ000000131914 Se solicita la modificación del entorno de Pre y Pro para el proyecto MERCURIO --> txz113 httpd_nuevawebcanonico.conf IHS
+
+La modificación consiste en una redirección de las peticiones que reciba IHS con el parámetro “clientesAutorizados”, hacia una URL interna que no devuelva datos del usuario.
+
+Si accedemos a la ruta https://localizador.correos.es/canonico/eventos_envio_servicio/PQ5G0W0711669040141430Q?clientesAutorizados=T&indUltEvento=1&codAplicacion=11&codIdioma=ES&codCanal=1 obtenemos información sensible, que hace que no cumplamos la LOPD.
+
+Cada vez que recibamos una url con “clientesAutorizados”, hay que redirigirla. 
+
+Para el caso anterior: 
+
+https://localizador.correos.es/canonico/eventos_envio_servicio/PQ5G0W0711669040141430Q?codAplicacion=60&codCanal=3&codIdioma=EN&indUltEvento=N
+
+Un cordial saludo y gracias de antemano,
+Arquitectura de Sistemas
+
+
+
+>>> Operaciones a realizar <<<
+1. Preparar (sin activar) fichero de configuración en el que se añada una directiva RewriteRule en la pasarela indicada en el entorno de operación, de forma que identifique y ELIMINE el token "clientesAutorizados=(.*)&" de la URL.
+
+Ejemplo. La regla ha de transformar esta invocación: 
+https://localizadorpre.correos.es/canonico/eventos_envio_servicio/PQ5G0W0711669040141430Q?clientesAutorizados=T&indUltEvento=1&codAplicacion=11&codIdioma=ES&codCanal=1
+
+En:
+https://localizadorpre.correos.es/canonico/eventos_envio_servicio/PQ5G0W0711669040141430Q?indUltEvento=1&codAplicacion=11&codIdioma=ES&codCanal=1
+
+(Ha desaparecido el 'clientesAutorizados=T&')
+
+2. Determina el tiempo que te tomaría y el impacto que supondría la ejecución de las tareas de ventana [V] asignadas a tu grupo
+
+>>> Entorno de operación <<<
+txz113.httpd_nuevawebcanonico.conf
+<VirtualHost localizadorpre.correos.es:443>
+
+PRUEBAS
+
+RewriteCond %{QUERY_STRING} ^clientesAutorizados=(.*) [NC]
+RewriteRule  (.*)   $1?     [R=301] -----> DE ESTA FORMA SI PROBAMOS https://localizadorpre.correos.es/canonico/eventos_envio_servicio/PQ5G0W0711669040141430Q?clientesAutorizados=T&indUltEvento=1&codAplicacion=11&codIdioma=ES&codCanal=1
+					   REDIRIGE A https://localizadorpre.correos.es/canonico/eventos_envio_servicio/PQ5G0W0711669040141430Q
+
+
+https://webmasters.stackexchange.com/questions/103075/mod-rewrite-part-of-the-query-string
+RewriteCond %{QUERY_STRING} ^clientesAutorizados=([^&]+)&?(.*)$
+RewriteRule ^/?$ /%1?%2 [R,L]   ---> En este caso compara ^/?$ con uri /canonico/eventos_envio_servicio/PQ5G0W0711669040141430Q y continúa con el siguiente Rewrite.
+				     Por tanto no cambia la URL.
+
+Otra prueba
+RewriteRule (.*)/clientesAutorizados=.+(.*) $1/$2 [R=301,L] ---> Esto no hace nada, no modifica la URL. La URI que se le pasa es canonico/eventos_envio_servicio/PQ5G0W0711669040141430Q e intenta buscar clientesAutorizados en esa URI y no lo encuentra.
+
+Otra prueba
+RewriteCond %{QUERY_STRING} clientesAutorizados=(.*)---> Esto modifica a https://localizadorpre.correos.es/T&indUltEvento=1&codAplicacion=11&codIdioma=ES&codCanal=1
+RewriteRule ^/(.*)$  %1?%2     [NE,R=301,L] --> NE, para que no tenga en cuenta los caracteres especiales. En este caso parece que sobra %2.
+
+
+Otra prueba
+
+Se quita estrictamente lo que dice Jorge, 
+
+        RewriteCond %{QUERY_STRING} clientesAutorizados=T&(*.)
+        RewriteRule ^/(.*)clientesAutorizados=T&(.*)$  %1%2     [NE,R=301,L] A Carmelo le funciona pero a mi no
+
+=======================================================
+desarrolloytalento.correos.es plz491/plz492
+
+
+=======================================================
+CRQ000000130402 SAP PI -ATC - Pasarela Ecofin SAP PI ATC
+Entorno PRE 
+
+tlz491
+
+       <IfModule mod_headers.c>
+               RequestHeader unset Expect early
+       </IfModule>
+
+       SSLEngine on
+       SSLProxyEngine on
+       SSLProtocol all -SSLv2 -SSLv3
+       SSLProtocol -all +TLSv1
+       SSLCipherSuite RSA:!EXP:!NULL:+HIGH:+MEDIUM:-LOW
+       ProxyRequests Off
+       ProxyPreserveHost On
+       ProxyTimeout 60
+       SetEnv force-proxy-request-1.0 1
+       SetEnv proxy-nokeepalive 1
+       SetEnv proxy-initial-not-pooled 1
+
+Se han deshabilitado los protocolos SSLv2 y SSLv3 y fozado el TLSv1, también se ha forzado a utilizar cifrados con RSA de fuerza alta/media deshabilitando los menos seguros.
+
+En el IHS la configuración ha quedado por defecto configurada como el resto de pasarelas que ya hay montadas en este entorno, solo ha sido necesario que se abriera la comunicación entre la pasarela y el destino:
+
+txz113
+
+       SSLEnable
+       SSLProtocolEnable SSLv3
+       SSLServerCert wsoutpre.correos.es
+       Keyfile /opt/WebSphere/HTTPServer85/ssl/sappiatc/sappiatc.kdb
+       SSLStashfile /opt/WebSphere/HTTPServer85/ssl/sappiatc/sappiatc.sth
+       SSLV2Timeout 100
+       SSLV3Timeout 1000
+       SSLProxyEngine On
+       ProxyRequests Off
+
+
+No funcionan las pruebas que realiza el cliente (devuelven 413), pero sí funcionan desde la pasarela. Continúan martes 8 enero.
+
+      Hola Álvaro, también lo hemos probado sin éxito. Te adjunto las variables y sus valores (muy elevados para descartar que sea por este motivo):
+
+LimitRequestFieldSize 50000000
+LimitRequestBody 1048576000
+SSLRenegBufferSize 838860800 
+
+========================================================
+INC000003456324 Modficación de pasarela IRIS6DGT NO SE HA HECHO
+
+Comentar las siguientes entradas en la pasarela IHS “iris6dgt” en pxz113/pxz114 de manera que devuelva un 404 (Not Found) que para lo que queremos conseguir es igual de válido que un 500 (Internal Server Error):
+  - ProxyPass /iris6dgtatex5 https://sedeapl.dgt.gob.es:8080/WS_ATEX5/services/ATEX
+  - ProxyPassReverse /iris6dgtatex5 https://sedeapl.dgt.gob.es:8080/WS_ATEX5/services/ATEX
+
+
+=========================================================
+CRQ000000130942 - PRO - IRIS - Endpoints Endesa - PXZ113 / PXZ114 12 enero 2019
+
+        ProxyPass /iris6endesa_new https://gi.endesa.es:443/TBCCONOBL001/
+        ProxyPassReverse /iris6endesa_new https://gi.endesa.es:443/TBCCONOBL001/
+
+        ProxyPass /cobroendesa_temp  https://gi.endesa.es:1443/SIFAC082
+        ProxyPassReverse  /cobroendesa_temp https://gi.endesa.es:1443/SIFAC082
+
+
+ curl -kv  https://gi.endesa.es:443/TBCCONOBL001/ --cert /home/wasadm/clientebkdmzp01.cer --cacert /home/wasadm/cacorreos.cer --key /home/wasadm/clientebkdmzp01.key --tlsv1.2
+*   Trying 146.133.7.36...
+* TCP_NODELAY set
+* Connected to gi.endesa.es (146.133.7.36) port 443 (#0)
+* ALPN, offering http/1.1
+Enter PEM pass phrase:
+* Cipher selection: ALL:!EXPORT:!EXPORT40:!EXPORT56:!aNULL:!LOW:!RC4:@STRENGTH
+* successfully set certificate verify locations:
+*   CAfile: /home/wasadm/cacorreos.cer
+  CApath: /var/ssl/certs/
+* TLSv1.2 (OUT), TLS header, Certificate Status (22):
+* TLSv1.2 (OUT), TLS handshake, Client hello (1):
+* TLSv1.2 (IN), TLS handshake, Server hello (2):
+* TLSv1.2 (IN), TLS handshake, Certificate (11):
+* TLSv1.2 (IN), TLS handshake, Server key exchange (12):
+* TLSv1.2 (IN), TLS handshake, Request CERT (13):
+* TLSv1.2 (IN), TLS handshake, Server finished (14):
+* TLSv1.2 (OUT), TLS handshake, Certificate (11):
+* TLSv1.2 (OUT), TLS handshake, Client key exchange (16):
+* TLSv1.2 (OUT), TLS handshake, CERT verify (15):
+* TLSv1.2 (OUT), TLS change cipher, Client hello (1):
+* TLSv1.2 (OUT), TLS handshake, Finished (20):
+* TLSv1.2 (IN), TLS alert, Server hello (2):
+* OpenSSL SSL_connect: SSL_ERROR_SSL in connection to gi.endesa.es:443
+* Closing connection 0
+curl: (35) OpenSSL SSL_connect: SSL_ERROR_SSL in connection to gi.endesa.es:443
+
+====================================================================
+CRQ000000121914 moncm 
+
+Instalación de Apache TLP0391 TLP0392 y PLP0391 PLP0392 Configuración pasarelas
+
+
+====================================================================
+CRQ000000134320 Modificación pasarelas de RI a ECI para el flujo oficina elegida PRO (Detalles en INC000003474581)
+
+
+Según nos solicitan en la INC000003474581, habría que hacer los siguietes puntos para los entornos de PRE y PRO:
+	- Cambiar el contexto "/maestroseci" por "/puntoconveniencia"
+	- Deshabilitar la autenticación en la pasarela (directiva SSLClientAuth)
+	- Añadir reglas Proxypass" para "/desactivarpuntoconveniencia" 
+	- Proceder con la baja de "envoficinaeci.conf"
+
+
+
+Traducción: se requiere dar de baja la pasarela httpd_envoficinaeci.conf y modificar la pasarela httpd_maestroseci.conf
+
+Modificación de la pasarela httpd_maestroseci.conf:
+
+	- Cambiar el contexto "/maestroseci" por "/puntoconveniencia"
+	- Deshabilitar la autenticación en la pasarela (directiva SSLClientAuth)
+	- Añadir reglas Proxypass" para "/desactivarpuntoconveniencia" (se encuentran en fichero httpd_envoficina.conf)
+	- Proceder con la baja de "envoficinaeci.conf"
+
+Modificación en PRE: no sé CRQ. Ya está hecho
+
+Modificación en PRO: 
+
+
+
+
+=======================================================================
+CRQ000000134648 05/02/2019
+
+
+Servidor 01				tlz113
+Servidor 02				n/a
+Listener port servidor 01		wsout2pre.correosextpre.local:20291
+Listener port servidor 02		n/a
+¿SSL Enable?				https
+Certificado servidor			n/a
+Certificado cliente			n/a
+CA					Certificado CT01 Joaquin Gonzalez  --> mirad la configuración de ATC en tlz491
+Directorio base				/aplicaciones/web/aeat
+Home config				/opt/jboss/httpd/httpd/conf
+Fichero de configuración del proxy	httpd_aeat.conf
+¿Requiere autenticación LDAP?		No
+Fichero de configuración LDAP		n/a
+Cláusula Location			n/a
+URL origen				https://wsout2pre.correosextpre.local:20291/aeat
+URL destino				https://www2.agenciatributaria.gob.es/static_files/common/internet/dep/aplicaciones/es/aeat/burt/jdit/ws/VNifV2.wsdl
+Método proxy				ProxyRemote (http://proxyapp.correos.es)
+URL prueba				(Realizar una comprobación básica)
+Resultado URL de prueba			No disponible
+Operación general			Alta
+
+
+
+En tlz491 está configurado SSLProxyMachineCertificateFile /opt/jboss/httpd/httpd/ssl/sappiatc/joaquingonzalez.pem
+
+
+Resultado
+tlz113:/aplicaciones/web/aeat/instalado $ /usr/sbin/httpd -f /etc/httpd/conf/httpd_aeat.conf -t
+AH00526: Syntax error on line 353 of /etc/httpd/conf/httpd_aeat.conf:
+ProxyPass worker name (https://www2.agenciatributaria.gob.es/static_files/common/internet/dep/aplicaciones/es/aeat/burt/jdit/ws/VNifV2.wsdl) too long
+
+Lo cambio por RewriteRule
+
+==========================================================================
+CRQ000000134644 Modificación PRE httpd_sapsrmcert.conf y httpd_sapsrm.conf
+
+Aclaraciones recibidas por email
+
+
+httpd_sapsrmcert.conf
+Donde pone:
+
+ 
+
+        #ProxyPass / https://sapsrmwd.correospre.es:6443/
+        #ProxyPassReverse / https://sapsrmwd.correospre.es:6443/
+        ProxyPass / https://sapwdsbx.correos.es:7443/
+        ProxyPassReverse / https://sapwdsbx.correos.es:7443/
+
+ 
+
+Cambiar por:
+
+ 
+
+        #ProxyPass / https://sapwdpre.correospre.es:6443/
+        #ProxyPassReverse / https://sapwdpre.correospre.es:6443/
+        ProxyPass / https://sapwdpre.correospre.es:7443/
+        ProxyPassReverse / https://sapwdpre.correospre.es:7443/
+
+ 
+
+ 
+
+ 
+
+httpd_sapsrm.conf 
+
+Y donde pone:
+
+ 
+
+        ProxyPass / https://sapwdsbx.correos.es:4443/
+        ProxyPassReverse / https://sapwdsbx.correos.es:4443/
+
+ 
+
+Cambiar por:
+
+ 
+
+        ProxyPass / https://sapwdpre.correospre.es:4443/
+        ProxyPassReverse / https://sapwdpre.correospre.es:4443/
+
+ 

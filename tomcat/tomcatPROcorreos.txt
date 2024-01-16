@@ -1,0 +1,398 @@
+=================================
+Tomcat Windows
+=================================
+
+Ejemplo: CAST-AED
+
+1. Tomcat se encuentra instalado como servicio (Run->services.msc)
+Apache Tomcat 8.0 tomcat
+
+1. Se para el servicio de Tomcat
+
+2. El directorio de tomcat se encuentra en D:\gsistemas\apache-tomcat-8.0.42\
+
+3. Las aplicaciones desplegadas se encuentran en D:\gsistemas\apache-tomcat-8.0.42\webapps
+
+4. Se borra la carpeta de la aplicación (CAST-AED) y el war que se encuentra en D:\gsistemas\apache-tomcat-8.0.42\webapps
+
+5. Se copia el war en la ruta indicada en la petición a D:\gsistemas\apache-tomcat-8.0.42\webapps.
+Como el Tomcat tiene configurado el autodeploy, cuando se arranque Tomcat se desplegará la aplicación.
+	5a. Se borran los temporales.
+		D:\gsistemas\apache-tomcat-8.0.42\temp\*
+		D:\gsistemas\apache-tomcat-8.0.42\work\* ---> se renombra la carpeta que haya dentro en vez de borrarla
+
+6. Se arranca de nuevo el servicio Tomcat.
+
+7. Verificar el correcto deployment de la aplicación:
+A. Que se ha creado la carpeta CAST-AED.
+
+B. Que en el fichero catalina aparece el mensaje de que ha terminado de desplegar la aplicación.
+
+Ruta logs -> D:\gsistemas\apache-tomcat-8.0.42\logs
+
+29-Nov-2017 11:38:30.548 INFO [localhost-startStop-1] org.apache.catalina.startup.HostConfig.deployWAR Deployment of web application archive D:\gsistemas\apache-tomcat-8.0.42\webapps\CAST-AED.war has finished in 20,031 ms
+
+El servidor termina de arrancar:
+29-Nov-2017 11:38:32.064 INFO [main] org.apache.catalina.startup.Catalina.start Server startup in 21605 ms
+
+-------------------------------------------------------------------------------------------
+CRQ000000100611 ---> CAST AAD CAST AED PROD.
+
+Despliegue de portal CAST-AAD en producción (pwa834)
+Despliegue de portal CAST-AED en producción (pwa836)
+
+
+Para el despliegue de cada uno de los portales seguir los siguientes pasos:
+1. Borrar completamente el contexto ---> No tiene sentido y menos antes de parar.
+2.  Parar Tomcat
+3.  Borrar los temporales.
+4.  Desplegar el WAR
+5.  Arrancar Tomcat.
+
+
+
+-Desplegar CAST_AAD.war en el Tomcat de la máquina pwa834.correos.es
+-Desplegar CAST_AED.war en el Tomcat de la máquina pwa836.correos.es
+
+Los war a desplegar los tenéis en el StarTeam proyecto QAC en la ruta QAC\Herramientas\CAST\WARS 8.2.5\PRO
+
+
+PRO (pwa834)-> CAST_AAD.war en  D:\TEMP 
+PRO (pwa836)-> CAST_AED.war en  d:\TEMP 
+
+pwa834
+
+1. Se para el servicio de Tomcat
+
+2. El directorio de tomcat se encuentra en D:\gsistemas\apache-tomcat-8.0.42\
+
+3. Las aplicaciones desplegadas se encuentran en D:\gsistemas\apache-tomcat-8.0.42\webapps
+
+4. Se borra la carpeta de la aplicación (CAST-AAD) y el war que se encuentra en D:\gsistemas\apache-tomcat-8.0.42\webapps
+No me dejaba borrar la carpeta. He tenido que matar procesos explorer y notepad de otros usuarios que no estaban conectados en la máquina en ese momento.
+
+5. Se copia el war en la ruta indicada en la petición a D:\gsistemas\apache-tomcat-8.0.42\webapps.
+Como el Tomcat tiene configurado el autodeploy, cuando se arranque Tomcat se desplegará la aplicación.
+	5a. Se borran los temporales.
+		D:\gsistemas\apache-tomcat-8.0.42\temp\*
+		D:\gsistemas\apache-tomcat-8.0.42\work\* ---> se renombra la carpeta que haya dentro en vez de borrarla
+
+6. Se arranca de nuevo el servicio Tomcat.
+
+7. Verificar el correcto deployment de la aplicación:
+A. Que se ha creado la carpeta CAST-AED.
+
+B. Que en el fichero catalina aparece el mensaje de que ha terminado de desplegar la aplicación.
+
+Ruta logs -> D:\gsistemas\apache-tomcat-8.0.42\logs
+
+29-Nov-2017 11:38:30.548 INFO [localhost-startStop-1] org.apache.catalina.startup.HostConfig.deployWAR Deployment of web application archive D:\gsistemas\apache-tomcat-8.0.42\webapps\CAST-AED.war has finished in 20,031 ms
+
+pwa836 --> Mismos pasos
+
+
+========================================
+Tomcat Linux
+========================================
+CRQ000000097510 PRE apiRestOficina (servicio oficinas) TOMCAT tlah505 Manual
+
+Es servicios oficinas.
+
+Desplegar el WS apiRestOficina.war en el servidor de preproducción ( http:// 192.168.253.243).
+
+1. Parar la aplicación
+Miro los procesos en la máquina pero no lo encuentro (arrancados con root)
+
+ ps -ef | grep -i oficina
+
+ /opt/Chrono/scripts/tomcat/tomcat.ctl.sh stop serviciosOficinas
+
+
+2. Guardar backup del actual (Tanto directorio como war).
+
+(Guardar backup del actual por si hubiera que dar marcha atrás)
+
+cp -Rp /aplicaciones/tomcat/webservices_ext/apiOficinas/webapps/apiRestOficina* /aplicaciones/tomcat/webservices_ext/apiOficinas/backupInstalacion/20171201/
+
+Borro la aplicación actual
+rm -rf /aplicaciones/tomcat/webservices_ext/apiOficinas/webapps/apiRestOficina*
+
+3. Copiar la aplicación de desarrollo.
+
+Copiar el war “apiRestOficina.war” que se encuentra en la máquina ftp 192.168.241.146 (Usuario: user1/user1) en la carpeta /aplicaciones/tomcat/webservices_ext/apiOficinas/webapps ---> esto no es un ftp.
+
+Desde la máquina de salto de Correos Express copio el war de desarrollo
+scp -p root@dlah571:/aplicaciones/tomcat/webservices_ext/apiOficinas/webapps/apiRestOficina.war /tmp/20171201/
+
+Lo copio a preproducción
+
+ scp -p /tmp/20171201/* root@tlah505:/aplicaciones/tomcat/webservices_ext/apiOficinas/webapps/
+
+Compruebo que está bien
+
+unzip -l apiRestOficina.war
+
+
+4. Descomprimo el zip puesto que tengo que modificar ficheros de configuración (tomcat se supone que los descomprime en el arranque)
+
+Puesto que el zip no crea un directorio con el nombre de la aplicación, creo la carpeta y dejo los mismos permisos que en el backup
+
+unzip apiRestOficina.war -d /aplicaciones/tomcat/webservices_ext/apiOficinas/webapps/apiRestOficina
+
+5. 
+Modificar las propiedades de BD en el siguiente fichero:
+
+apiRestOficina \WEB-INF\classes\jdbc.properties -> Fichero con los datos de la conexión a BD:
+jdbc.username: El usuario de Oracle, en este caso “ALERTRAN”.
+jdbc.password: Indicar la contraseña del usuario de BD para el entorno de PRE.
+jdbcRoc.username: El usuario de Oracle, en este caso “ALERTRAN”.
+jdbcRoc.password: Indicar la contraseña del usuario de BD para el entorno de PRE.
+jdbc.url: Indicar la cadena de conexión a la BD de PRE.
+
+Este es el contenido del fichero de backup, se ponen los mismos parámetros
+
+--
+jdbc.driverClassName = oracle.jdbc.driver.OracleDriver
+
+jdbc.username=alertran
+jdbc.password=b0t3ll2
+
+jdbcRoc.username=alertran
+jdbcRoc.password=b0t3ll2
+
+
+jdbc.url = jdbc:oracle:thin:@prenova.bbdd.chronoexpres-int.:1521:PRENOVA
+
+#c3p0 pool
+c3p0.acquire_increment=5
+c3p0.max_size=100
+c3p0.min_size=5
+c3p0.max_idle_time=1200
+c3p0.unreturned_connection_timeout=600
+c3p0.initial_pool_size = 5
+c3p0.max_connection_age = 600
+--
+
+
+Nota de desarrollo: 
+
+Si es la primera vez que se instala en la máquina confirmar que el fichero “config-usuarios-web.properties” se encuentra en la ruta {catalina.home}/conf/apiRestOficina/config-usuarios-web.properties. Si no existiese copiar a esa ruta el fichero situado en apiRestOficina \WEB-INF\classes\conf
+
+6. Arrancar la aplicación.
+/opt/Chrono/scripts/tomcat/tomcat.ctl.sh start serviciosOficinas
+
+----------------------------------------------------------------------
+CRQ000000099069 ---> Chronoexpress. 11:00h-12:00h
+
+Petición
+Desplegar el WS apiRestOficina.war en las nuevas máquinas de servicios web externos, sustituyendo al existente (Guardar backup del actual por si hubiera que dar marcha atrás)
+
+
+Hacer que los frontales apache redirijan una nueva regla para el nuevo funcionamiento del servicio web desplegado: apiRestOficina para este servicio ya existen creadas y en funcionamiento otras dos reglas, sería añadir una nueva regla más.
+
+Lo que queremos es convertir:
+https://www.correosexpress.com/wpsc/
+/apiRestOficina/v1/oficinas/listadoOficinasCoordenadas
+
+a: 
+Donde está subido dicho WS en la máquina de servicios web externos.
+
+NO PARAR EL APACHE, SOLO HACER GRACEFUL
+
+1. Parar Tomcat plah692/693 HECHO (no hace falta parar tomcat para modificaciones en la BBDD RENOVA)
+
+sudo su - tomcat -c "/opt/Chrono/scripts/tomcat/tomcat.ctl.sh stop serviciosOficina"
+
+
+2. Despliegue de Aplicación apiRestOficina.war Tomcat. 
+	Tomcat plah692/693 Manual
+	Frontales de servicios externos/Apache CEX: plzh563/564/565/568/569 (Todo lo que sea acceso por DMZ pasa por estos Apache).
+   							La configuración se encuentra en /aplicaciones/www/extranet/conf/vhosts.d
+   							Estas directorio está compartido por NFS, por lo que solo hace falta modificarlo en uno de ellos.
+
+	Directorio de despliegue:						
+   						
+
+	2.1. Coger el war “apiRestOficina.war” que se encuentra en la máquina ftp 192.168.241.146 (Usuario: user1/user1) NO ES UN FTP. HECHO
+                Desde la máquina de salto
+                scp -p root@192.168.241.146:/aplicaciones/tomcat/webservices_ext/apiOficinas/webapps/apiRestOficina.war /home/E006310/maria/apioficina
+        2.2 Lo descomprimo
+                unzip /home/E006310/maria/apioficina/apiRestOficina.war -d /home/E006310/maria/apioficina/apiRestOficina
+
+        2.3     Modificar las propiedades de BD en el siguiente fichero: HECHO EN LA MÁQUINA DE SALTO.
+		apiRestOficina \WEB-INF\classes\jdbc.properties -> Fichero con los datos de la conexión a BD:
+		
+		jdbc.username: El usuario de Oracle, en este caso “ALERTRAN”. Da igual mayúsculas o minúsculas.
+		jdbc.password: Indicar la contraseña del usuario de BD para el entorno de PRO.
+		jdbcRoc.username: El usuario de Oracle, en este caso “ALERTRAN”. Da igual mayúsculas o minúsculas.
+		jdbcRoc.password: Indicar la contraseña del usuario de BD para el entorno de PRO.
+		jdbc.url: Indicar la cadena de conexión a la BD de PRO.
+
+		Si es la primera vez que se instala en la máquina confirmar que el fichero “config-usuarios-web.properties” se encuentra en la ruta 
+/aplicaciones/tomcat/webservices_ext/apiOficina/conf/apiRestOficina/config-usuarios-web.properties. Si no existiese copiar a esa ruta el fichero situado en apiRestOficina \WEB-INF\classes\conf EXISTE NO HACER NADA
+
+        2.4. Lo llevo a las máquinas de producción. HECHO.
+             Desde la máquina de salto
+             scp -rp /home/E006310/maria/apioficina/* root@plah392:/tmp/20180120
+	     scp -rp /home/E006310/maria/apioficina/* root@plah693:/tmp/20180120
+
+		3.3 Hacer backup de /aplicaciones/tomcat/webservices_ext/apiOficina/webapps/apiRestOficina en /aplicaciones/tomcat/webservices_ext/apiOficina/backupInstalacion
+            cp -Rp /aplicaciones/tomcat/webservices_ext/apiOficina/webapps/apiRestOficina* /aplicaciones/tomcat/webservices_ext/apiOficina/backupInstalacion/
+            Hago backup del war y del directorio. HECHO
+
+ 	2.5 Borrar el directorio. HECHO
+
+        2.6 Copiar el war y directorio a su sito tanto en plah692/693. HECHO
+
+            cp -Rp /tmp/20180120/* /aplicaciones/tomcat/webservices_ext/apiOficina/webapps/
+
+        2.7 Modificar owner y permisos si fuera necesario.
+
+        2.8 Arrancar TOMCAT en ambos nodos. HECHO
+            sudo su - tomcat -c "/opt/Chrono/scripts/tomcat/tomcat.ctl.sh start serviciosOficina"
+
+Directorio de despliegue: /aplicaciones/tomcat/webservices_ext/apiOficina/webapps/
+Directorio de logs: /aplicaciones/tomcat/webservices_ext/apiOficina/logs
+
+3. Nueva regla de dirección
+
+Hacer que los frontales apache redirijan una nueva regla para el nuevo funcionamiento del servicio web desplegado: apiRestOficina para este servicio ya existen creadas y en funcionamiento otras dos reglas, sería añadir una nueva regla más.
+
+Lo que queremos es convertir:
+https://www.correosexpress.com/wpsc/
+/apiRestOficina/v1/oficinas/listadoOficinasCoordenadas a: 
+Donde está subido dicho WS en la máquina de servicios web externos.
+
+NO PARAR EL APACHE, SOLO HACER GRACEFUL
+
+	3.1 El fichero ya está modificado y solo hace falta hacer backup del antiguo y renombrar el fichero quitando el número de CRQ.
+            Se busca que fichero de configuración tiene /wpsc/apiRestOficinas y se añade la nueva conversión.
+
+        3.2 Hacer graceful APACHE en plzh563/564/565/568/569 (Se arrancan como root y apache)
+
+        /etc/init.d/apache_extranet graceful
+		
+-------------------------------------------------------------------------------------------
+CRQ000000100858 ---  ApiRestSG Preproducción. Tomcat.
+
+tlah505.
+Todos los procesos en esta máquina están arrancados como root.
+
+catalina.home=/aplicaciones/tomcat/apirestSGC
+
+1. Parar tomcat en tlah505.
+/opt/Chrono/scripts/tomcat/tomcat.ctl.sh stop serviciosApiSGC
+
+2. Modificar las propiedades de BD en el siguiente fichero, no hace falta modificar porque no se ha desplegado.
+
+apiRestSGC\WEB-INF\classes\jdbc.properties -> Fichero con los datos de la conexión a BD:
+jdbc.username: El usuario de Oracle, en este caso “ALETRAN”.
+jdbc.password: Indicar la contraseña del usuario de BD para el entorno de PRE.
+jdbcRoc.username: El usuario de Oracle, en este caso “ROC_APP”.
+jdbcRoc.password: Indicar la contraseña del usuario de BD para el entorno de PRE.
+jdbc.url: Indicar la cadena de conexión a la BD de PRE.
+
+Cojo las propiedades de un backup del día 15 de enero.
+
+jdbc.username=alertran
+jdbc.password=b0t3ll2
+
+jdbcRoc.username=ROC_APP
+jdbcRoc.password=L0capP4
+
+
+jdbc.url=jdbc:oracle:thin:@prenova.bbdd.chronoexpres-int:1521:PRENOVA
+
+jdbcRoc.url=jdbc:oracle:thin:@prenova.bbdd.chronoexpres-int:1521:PRENOVA
+
+
+3. 
+Sustituir el fichero ${catalina.home}/conf/apiRestSGC/config-liferay-extranet.properties por el adjuntado
+
+4. Arrancar el tomcat 6 de preproducción (restpre.correosexpress.com).
+
+
+================
+Otras notas
+===============
+Fichero login-config.xml ---> fichero donde se dejan los j2c como WAS.
+
+-------------
+CRQ000000099237 ----> Subida a PRE de myCEX (chx-hook)
+
+1. Parar el Servidor Tomcat de la Intranet de PRE (portal.preproduccion.mycex.chronoexpres.com, IP: 192.168.241.90)
+La IP indicada no es válida. La válida es TLAH501 192.168.253.90.
+
+Esta petición está mal. Han dado la dirección de la máquina de desarrollo del community, cuando deberían haber dado la dirección de la máquina de enterprise.
+
+-----------------
+CRQ000000099246 --> Modificar js de Chrononet sin reiniciar entorno ni borrar temporales
+                    Máquina tlah697.
+					
+		Ruta instalación: /opt/tomcat/distr			
+
+IMPORTANTE. NO PARAR EL SERVIDOR
+1. Renombrar el js “MtoAsigConduc.js”, que se encuentra en la máquina de PreProducción “192.168.253.81” y en la ruta: “/webapps/Chrononet/recursos/recogidas/js” el nombre puede ser “MtoAsigConduc _old.js”
+
+2. Copiar el fichero js adjunto con esta solicitud: “MtoAsigConduc.js”, a la máquina de preproducción “192.168.253.81” y en la ruta: “/webapps/Chrononet/recursos/recogidas/js”
+
+3. Los permisos del js copiado deben ser los mismos que el js renombrado en el paso 3
+
+4. Validación del usuario.
+---------------------------------------------------------------------------------------------
+CRQ000000099171 --> Modificar js de Chrononet sin reiniciar el entorno ni borrar temporales
+                    Se siguen los mismos pasos que en el CRQ anterior.
+					
+		Ruta instalación: /opt/tomcat/distr
+
+-----------------------------------------------------------------------------------------------
+CRQ000000099245 ----> Subida a PRE MyCEX: Enlace herramienta ticketing GENI
+
+Se realiza con el script de 10.130.25.4 (El usuario para conectarse a las máquinas remotas es E006310)
+
+Antes de hacer el despliegue, haced copia de seguridad manual.
+
+Después del despliegue, se modifica manualmente el fichero que se indica portal.properties, que se encuentra bajo 
+
+tools/liferay-portal-6.1.20-ee-ga2-mycex/tomcat-7.0.27/webapps/chx-hook/webapps/chx-hook/WEB-INF/src
+
+Se ponen los valores de PRE. En este caso no hace falta hacer nada ya que estaban modificados.
+
+++++++++ Pasos manuales ++++++++
+
+Ruta de backup /tools/liferay-portal-6.1.20-ee-ga2-mycex/backup2017mmdd
+Ruta de despliegue /tools/liferay-portal-6.1.20-ee-ga2-mycex/tomcat-7.0.27/webapps/
+
+1. Parar el Servidor Tomcat de la Intranet de PRE (portal.preproduccion.mycex.chronoexpres.com, IP: 192.168.241.90)
+La dirección IP no es esa. Es la máquina tlah501
+
+ sudo su - tomcatmc -c "/opt/Chrono/scripts/tomcat/tomcat.ctl.sh  stop nueva-intranet-mycex"
+  
+ sudo su - tomcatmc -c "/opt/Chrono/scripts/tomcat/tomcat.ctl.sh  start nueva-intranet-mycex"
+ 
+2. Realizar backup de la aplicación chx-hook en preproducción. De la ruta de despliegue a la ruta de backup.
+
+3. En la máquina Intranet de PRE (portal.preproduccion.mycex.chronoexpres.com, IP: 192.168.241.90). 
+Eliminar la carpeta chx-hook y su contenido ubicada en la ruta /tools/liferay-portal-6.1.20-ee-ga2-mycex/tomcat-7.0.27/webapps/
+
+4. De la máquina Intranet de DES (192.168.241.96) en la ruta  /tools/liferay-portal-6.1.20-ee-ga2-mycex/despliegues_desa/20171219_chx-hook
+Copiar de esa ruta el fichero chx-hook.war y desplegarlo la máquina Intranet de PRE (portal.preproduccion.mycex.chronoexpres.com, IP: 192.168.241.90) en la ruta /tools/liferay-portal-6.1.20-ee-ga2-mycex/tomcat-7.0.27/webapps/
+
+Dentro de la carpeta hay un war.
+
+5. Arranco la instancia para que genere el directorio
+
+No se genera directorio.
+
+Se descomprime el war manualmente:
+para ver lo que contiene el war: unzip -l chx-hook.war
+
+unzip chx-hook.war -d /tools/liferay-portal-6.1.20-ee-ga2-mycex/tomcat-7.0.27/webapps/chx-hook
+		
+6. Se modifica manualmente el fichero que se indica portal.properties, que se encuentra bajo 
+
+tools/liferay-portal-6.1.20-ee-ga2-mycex/tomcat-7.0.27/webapps/chx-hook/webapps/chx-hook/WEB-INF/src
+
+Se ponen los valores de PRE. En este caso no hace falta hacer nada ya que estaban modificados.
+
+7. Se arranca el servidor.

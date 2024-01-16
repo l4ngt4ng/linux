@@ -1,0 +1,58 @@
+﻿Configuración de la pasarela <Location>  </Location>
+
+ <Location /notificacionesgoibrk>
+                LDAPConfigFile /opt/WebSphere/HTTPServer85/conf/ldapnotificacionesgoibrk.prop
+                AuthType Basic
+                AuthName "notificacionesgoibrk"
+                LDAPRequire group EVENTOSEXT_PRE_US_AUTHMERCHANTS
+                Require valid-user
+                RequestHeader unset Authorization
+        </Location>
+
+__________________________________________________
+AuthName "XXXUsuarioXXX"
+__________________________________________________
+
+
+Para habilitar trazas para revisar que la configuracion Ldap es correcta en la pasarela :
+
+/opt/WebSphere/HTTPServer85/bin/envvars
+
+#LDAP_TRACE_FILE=/aplicaciones/web/notificacionesgoibrk/logs/ldaptrace.log
+#export LDAP_TRACE_FILE=/aplicaciones/web/notificacionesgoibrk/logs/ldap_login_ps2c.log
+#LDAP_DEBUG=65535
+#export LDAP_DEBUG=65535
+
+Descomentar estas líneas, este fichero habilitara trazas en todas las pasarelas ( es global - cuidado ). 
+El log es muy descriptivo de todo el intercambio ssl con el ldap.
+
+
+
+Configuración Ldap fichero : 
+
+TAREA TDSUM
+
+En el directorio: /etc/opt/tdsum/
+
+
+hay que configurar un archivo : 
+
+/etc/opt/tdsum/tdsum_notificacionesgoibrk.conf
+
+y un archivo con la password encriptada:
+
+/opt/WebSphere/HTTPServer85/bin/ldapstash WM7JTtxx  /etc/opt/tdsum/notificacionesgoibrk.sth
+
+
+
+Usuario de Bind suelen enviarlo por correo, buscar CRQ en el buzón.
+
+SXXXXX8
+WM7JTtxx
+
+
+Para buscar:
+
+
+/opt/IBM/ldap/V6.1/bin/ldapsearch -D cn=root -w \? -h tdsdmzpre.correosextpre.local -p 636 -ZK /db2tds/sisdir00/keys/noproductivo.kdb -D cn=S002216,ou=recuperacionpee,ou=Aplicaciones,o=public,o=correos,c=es -w V34AMflj -b ou=serviciorecogidas,ou=aplicaciones,o=public,o=correos,c=es cn=S002216 DN 
+

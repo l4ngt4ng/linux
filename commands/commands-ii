@@ -1,0 +1,1860 @@
+
+ssh -D ______________________________________________________________________
+
+ssh -D 999 user@ipdst 
+
+crea un proxy socks en el dst 
+luego configuras el proxy en tu navegador dependiendo si es sobre linux o en la conf de red del os, de tipo socks 
+
+si montas un servidor ssh en tu casa desde la red de la empresa pongamos te puedes conectar a tu servidor ssh de casa para ver youtube
+pues lo que haces es desde el pc de la empresa al configurarle el proxy todo lo que vayas a acceder sale a traves de dicho proxy y viaja por ssh 
+encriptado a tu pc
+
+
+
+Ssh -X _______________________________________________________________________
+
+
+ssh -X user2@ipdst 
+
+una vez logado si haces firefox 
+
+o ssh -X user@ipdst firefox 
+
+al ejecutar firefox lo que hace es ejecutarlo en ip dst peo lo muestra en tu navegador cliente
+
+______________________________________________________________________________
+
+
+
+
+Tunnel tunel ssh ______________________________________________________________
+
+ip dst server 1: 192.168.1.136  only ssh available from client ( available connection from client masterk8s)
+ip dst server 2: 192.168.1.137  only ssh available from server 1 no direct connection available from client masterk8s 
+
+POC: masterk8s ---> ssh tunnel througth server 1 --> ssh connect to server 2
+
+ssh -L 2020:sever2ip:22 user@server1ip
+
+esto lo que hace es abrir en el client master k8s un puerto 2020 que lo que expone es el acceso al server 2 desde el server 1
+
+ssh -p 2020 user@masterk8s <-- client loclahost tambien ok 
+
+
+___
+
+
+tunel reverso 
+
+desde el dst al que quieres acceder haces
+
+ssh -R 2020:localhost:22 user@masterk8s   <-- es la direccion opuesta lo que haces es abrir un puerto en el dst que se esta conectando al cliente masterk8s
+
+una vez conectado al servidor cliente haces
+
+ssh user@localhost -p2020 y ya estarias conectado al server dst desde el cliente 
+
+
+________________________________________________________________________________
+
+
+
+
+
+Rsync rsync ____________________________________________________________________
+
+rsync -avh /wdir/* /run/media/abenito/42f65542-c0a3-4a32-a7a7-8b98f23cd4cb/wdir/
+
+
+rsync -avh --delete /wdir/kubernetes/03-spark3/  /run/media/abenito/42f65542-c0a3-4a32-a7a7-8b98f23cd4cb/wdir/kubernetes/03-spark3/
+
+para que borre en destino NO poner folder/* 
+
+Sincronizacion probada:
+
+
+
+_________________________________________________________________________________
+
+AIX
+
+mount iso:
+
+mkdir /mnt/iso
+mount -o loop /path/to/my-iso-image.iso /mnt/iso
+mount OR df -H OR ls -l /mnt/iso/
+umount /mnt/iso/
+
+_________________________________________________
+
+replace string inside files finding recursively
+
+find . -type f -exec sed -i 's/8080/9090/g' {} +
+
+
+____________________________________________________________________________________
+Unir dos columnas de un fichero 
+
+paste -d " " old.txt new.txt 
+____________________________________________________________________________________
+
+
+
+AIX_________________________________________________________________________________
+
+
+
+tar -L /tmp/b/list.txt -cvf /sistemas/softunix/SISTEMAS-WAS/WAS/bk/b/f.tar
+
+
+__________________________________________________________________________________
+
+curl -ivk https://plz114.correosext.local:20291/aeat --insecure
+__________________________________________________________________________________
+threads ps:LINUX
+
+
+ps -T -p <pid>
+
+top -H -p <pid>
+
+AIX:
+
+
+    ps -m -o THREAD -p <pid> - This command helps us in finding PID with THREAD ID and the status of the threads
+    procstack <pid> - Map Pthread ID with Kernel thread-id -- If the Status of the Thread is in suspend Mode, then thread ID is not visible in the out of procstack command
+
+
+
+
+________________________________________________________________________________________________________________
+
+
+swao memoria meory SWAP
+
+
+muestra los 10 procesos que usan mas memoria:
+
+ps aux --sort=-%mem | awk 'NR<=10{print $0}'
+
+muestra proceso y consumo de la memoria ram residente sin incluir swap te devuelve el usuario 
+que lo ejecuta, el command y los argumentos
+
+ps -e -o pid,rss,uname,comm,args
+
+
+vmstat 
+procs -----------memory---------- ---swap-- -----io---- -system-- ------cpu-----
+ r  b   swpd   free   buff  cache   si   so    bi    bo   in   cs us sy id wa st
+ 2  1 608996 1515860     20 503552   30   55   837  1000  421  524  9  2 79  9  0
+
+si y so es el la entrada y salida de paginas de la RAM a la Swap.
+swpd  virtual
+free disponible
+buff/cache en buff y cache
+
+in interrupciones por sg
+cs cambios de contexto por sg
+
+
+wa waiting for I/O
+
+
+
+Parametros rss y vsz de ps:
+rss: memoria ram allocada en uso real
+vsz: memoria virtual, es la memoria que se estima que use el proceso se prereserva de mas pero si alguien la necesita se le otorga
+
+son los mismos parametros que 
+
+RES y VIRT de top.
+
+
+
+
+
+
+
+
+
+
+_________________________________________________________________________________________________________________
+
+__________________________________________________________________________________plz114.correosext.local
+
+usuario de redhat REDHAT 
+
+
+URL: idp.redhat.com - Usuario: sistemas.was - Password: Sistemas.W4s - Email: sistemas.was@correos.com 
+
+
+EJECUTAR con xargs -i o -I
+xargs  sh ejecutar comando resultante pipe ....
+
+ps -fea | grep WebSphere | awk '{print $9}' | uniq | grep java | xargs -i echo {} -version | sh
+
+
+en teoria el sh del final no deberia hacer falta pero no funcionaba por eso le puese la shell
+
+
+La opcion -i en xargs esta deprecada en su caso usar: 
+
+
+ps -fea | grep WebSphere | awk '{print $8}' | uniq | grep java | xargs -I {} echo {} -version| sh
+
+
+java version "1.7.0"
+Java(TM) SE Runtime Environment (build pap6470sr9fp60ifix-20161110_01(SR9 FP60)+IV90630+IV90578))
+IBM J9 VM (build 2.6, JRE 1.7.0 AIX ppc64-64 Compressed References 20161005_321282 (JIT enabled, AOT enabled)
+J9VM - R26_Java726_SR9_20161005_1259_B321282
+JIT  - tr.r11_20161001_125404
+GC   - R26_Java726_SR9_20161005_1259_B321282_CMPRSS
+J9CL - 20161005_321282)
+JCL - 20161021_01 based on Oracle jdk7u121-b15
+
+es posible que una vez ejecutado para recuperar el control del terminal haya que hacer ^C para que muestre la salida.
+
+______________________________________________________________________________________________________
+
+PARA establecer blackout de maquinas de dmz hay que conectarse a dmz y para el resto a gestion normal.
+
+D:\BLACKOUT
+
+______________________________________________________________________________________________________
+
+
+
+mq errors error mqerror MQ ERROR
+
+____________________________________________
+
+buscar errores mq: grep -i mqrc     
+errores j2ca ( protoloco )
+errores mdb  grep -i mdb
+o transaction ...
+
+
+
+
+
+____________________________________________
+
+____________________________________________
+
+subir volcados de memoria: javacores scp 
+
+
+desde la máquina isa5@plg222fc:/var/sistemas_was/in/gpvo_pxa396
+
+te posicionas en la carpeta correspondiente y scp inverso desde ahí from origen:
+
+scp wasadm@pxa396:/aplicaciones/was/gpvo/javacores/heapdump.20181008.104740.6488220.0007.phd .
+
+
+
+Luego en la máquina plg224fc ejecutar :/opt/IBM/ISA5_64/scripts/memoryanalizer.sh
+
+_______________________________________________________________________________________________
+_______________________________________________________________________________________________
+
+
+______________________________________________________________________________________________________
+
+
+Devuelve 500 internal server error en comunicacion entre apache y was SSL:
+
+https://www-01.ibm.com/support/docview.wss?uid=nas8N1019946
+
+
+__________________________________________________________________________________
+wget https://host:port/test.html --no-check-certificate
+
+__________________________________________________________________________________
+
+http_plugin.log 
+_______________
+
+
+[23/Aug/2018:21:22:03.18652] 010b00f2 00000001 - ERROR: lib_security: logSSLError: str_security (gsk error 408):  GSK_ERROR_BAD_KEYFILE_PASSWORD
+[23/Aug/2018:21:22:03.19575] 010b00f2 00000001 - ERROR: lib_security: initializeSecurity: Failed to initialize GSK environment. Secure transports are not possible.
+[23/Aug/2018:21:22:03.19580] 010b00f2 00000001 - ERROR: ws_transport: transportInitializeSecurity: Failed to initialize security. Secure transports are not possible.
+[23/Aug/2018:21:22:03.19607] 010b00f2 00000001 - ERROR: ws_server: serverAddTransport: Failed to initialize security. Secure transports are not possible.
+[23/Aug/2018:21:22:03.20086] 010b00f2 00000001 - ERROR: lib_security: logSSLError: str_security (gsk error 408):  GSK_ERROR_BAD_KEYFILE_PASSWORD
+[23/Aug/2018:21:22:03.20089] 010b00f2 00000001 - ERROR: lib_security: initializeSecurity: Failed to initialize GSK environment. Secure transports are not possible.
+[23/Aug/2018:21:22:03.20090] 010b00f2 00000001 - ERROR: ws_transport: transportInitializeSecurity: Failed to initialize security. Secure transports are not possible.
+[23/Aug/2018:21:22:03.20107] 010b00f2 00000001 - ERROR: ws_server: serverAddTransport: Failed to initialize security. Secure transports are not possible.
+[23/Aug/2018:21:22:03.20202] 010b00f2 00000001 - PLUGIN: Plugins loaded.
+[23/Aug/2018:21:22:03.20204] 010b00f2 00000001 - PLUGIN: --------------------System Information-----------------------
+[23/Aug/2018:21:22:03.20205] 010b00f2 00000001 - PLUGIN: Bld version: 8.5.5.9
+[23/Aug/2018:21:22:03.20207] 010b00f2 00000001 - PLUGIN: Bld date: Feb 24 2016, 14:21:05
+[23/Aug/2018:21:22:03.20210] 010b00f2 00000001 - PLUGIN: Webserver: IBM_HTTP_Server
+[23/Aug/2018:21:22:03.20212] 010b00f2 00000001 - PLUGIN: OS : IBM AIX 64 bit
+[23/Aug/2018:21:22:03.20213] 010b00f2 00000001 - PLUGIN: Hostname = txz123
+[23/Aug/2018:21:22:03.20215] 010b00f2 00000001 - PLUGIN: NOFILES = hard: 8196, soft: 8196
+[23/Aug/2018:21:22:03.20216] 010b00f2 00000001 - PLUGIN: MAX COREFILE SZ = hard: INFINITE, soft: INFINITE
+[23/Aug/2018:21:22:03.20218] 010b00f2 00000001 - PLUGIN: DATA = hard: INFINITE, soft: 1610612736
+[23/Aug/2018:21:22:03.20219] 010b00f2 00000001 - PLUGIN: --------------------------------------------------------------
+
+
+
+hay que regenerar y despues re arrancar el server
+
+wasadm@txz123:/opt/WebSphere/HTTPServer85/ssl/nwebapp$ /opt/WebSphere/scripts/java/bin/java com.ibm.gsk.ikeyman.ikeycmd -keydb -stashpw -db /opt/WebSphere/Plugins85/config/txz123webnwebapp/plugin-key.kdb -pw WebAS
+
+DOCUMENTACION: https://www-01.ibm.com/support/docview.wss?uid=swg21177702
+
+
+[23/Aug/2018:21:25:56.93258] 011900da 00000001 - PLUGIN: Plugins loaded.
+[23/Aug/2018:21:25:56.93523] 011900da 00000001 - PLUGIN: --------------------System Information-----------------------
+[23/Aug/2018:21:25:56.93525] 011900da 00000001 - PLUGIN: Bld version: 8.5.5.9
+[23/Aug/2018:21:25:56.93527] 011900da 00000001 - PLUGIN: Bld date: Feb 24 2016, 14:21:05
+[23/Aug/2018:21:25:56.93529] 011900da 00000001 - PLUGIN: Webserver: IBM_HTTP_Server
+[23/Aug/2018:21:25:56.93530] 011900da 00000001 - PLUGIN: OS : IBM AIX 64 bit
+[23/Aug/2018:21:25:56.93532] 011900da 00000001 - PLUGIN: Hostname = txz123
+[23/Aug/2018:21:25:56.93533] 011900da 00000001 - PLUGIN: NOFILES = hard: 8196, soft: 8196
+[23/Aug/2018:21:25:56.93535] 011900da 00000001 - PLUGIN: MAX COREFILE SZ = hard: INFINITE, soft: INFINITE
+[23/Aug/2018:21:25:56.93536] 011900da 00000001 - PLUGIN: DATA = hard: INFINITE, soft: 1610612736
+[23/Aug/2018:21:25:56.93538] 011900da 00000001 - PLUGIN: --------------------------------------------------------------
+
+
+__________________________________________________________________________________________________________________________________________________________
+
+
+acceso a kibana
+
+https://kibana.correos.es
+
+cuando añadas la excepcion te ofrece login_ldap.html
+
+quita el ldap y deja login.html
+
+entrar con :
+
+ibm_logs/c0rr30s 	
+
+_________________________________________________________________________________________________________________
+
+10.130.25.1  ACCESSO A MAQUINA membrane
+
+http://192.168.250.63:9000/admin/calls
+
+
+QUENDA en post es SGDC que tampoco tiene grupo en post -->
+
+
+___________________________________________________________________________________________________________________
+
+puerto 8088 membranes webEXT 
+
+cuando falla esto, hay que mirar netstat -an | grep -i 
+fin_wait suele haber muchas contra algun nodo concreto de abajo /( tomcat ) puerto 8088 , en ese caso hay que reiniciar escalonadamente los membranes porque a los tomcat de abajo no 
+les llegan siquiera las peticiones, la maquina de membrane no es capaz de abrir nuevas peticiones es un tema de descriptores de fichero y demas, llegan al limite. 
+
+
+nos lo cuenta alvano. 
+
+
+_____________________________________________________________________________________________________________________________________
+
+
+
+
+SGIDAP
+________________________________________________________________
+
+lo lleva soporte de identidades
+
+__________________________________________________________________
+________________________________________________________________________________________________________________________
+CAST
+
+a veces hay que desplegar sobre windows en maquinas de CAST por ejemplo en PRE es : TWA834  
+para conectar el domino es CORREOSPRE\E012052   no CORREOS
+
+
+
+________________________________________________________________________________________________________________________
+
+ADONIS
+
+ADONIS esta en máquinas windows: 
+PRE web twp831     tomcat twa831   
+PRO web pwp831/2   web pwp831/832
+
+Alejandro comenta que la version en produccion es la 5.2.1 la 4 esta obsoleta. No osbtante veo en pre corriendo los dos servicios.
+________________________________________________________________________________________________________________________
+
+
+
+________________________________________________________________________________________________________________________
+
+SSO   ldap configuracion tomcat aplicacion
+
+<web-app id="WebApp_1174555890234">
+      <display-name>SSO</display-name>
+      <filter id="Filter_1174555890234">
+         <filter-name>NtlmHttpFilter</filter-name>
+         <filter-class>jcifs.http.NtlmHttpFilter</filter-class>
+         <init-param id="InitParam_1174555890234">
+            <param-name>jcifs.http.domainController</param-name>
+            <param-value>correos.es</param-value>
+
+
+la linea param-value  -> correos.es es la que indica a qué ldap está apuntando
+
+
+
+__________________________________________________________________________________________________________________________________________
+
+contraseña en aplicacion windows pwsafe --> correos
+__________________________________________________________________________________________________________________________________________
+
+____________________________________________________________________________________________________
+
+
+
+http://proxy.correos.es/proxy.pac 
+
+estación de salto buena --> rwc031
+____________________________________________________________________________________________________
+
+máquina salto: plg823 (correos)
+
+______________________________________________
+
+SOAP soap.xml soap curl 
+______________________________________________
+curl -d @soapFile.xml https://llamadadestinoWEBSERVICE
+
+______________________________________________________
+
+
+comando sed:
+
+cat /etc/rc.was |grep start |grep -v su | sed -e "s/start/stop/g" -e "s/$/ \&/g" |bash
+
+Alternativa con perl funciona en AIX:
+
+wasadm@pxz113:/opt/WebSphere/HTTPServer85_tls/conf$ for i in `ls httpd* | egrep -v 'httpd.conf|httpd_conf.default|httpd_serverTest.conf'`;do perl -pi -e 's/HTTPServer85/HTTPServer85_tls/g' ${i};done
+
+
+_______________________________________________________________________________________________________________________________________
+
+PATROL: pcwas/pcwas
+\\softwin\softwin$
+
+pxa123: El ThreadPool mercurio_pxa397-WebContainer tiene 1.00 hilos colgados declarado
+  /opt/StarTeamCP_2009/bin/stcmd list -p "E012038@stm.correos.es:49201/webnueva/webnueva/WebCenterSites/Aplicaciones/PRE/1.PRE-STAGING/4.WCS_PATCH_12"
+starteam amdinistrador: admnistrator/starteam77
+
+\\Rcpr231a.correos.es\sep\01. AREA DE SISTEMAS\04. SISTEMAS UNIX\03. SISTEMAS WAS\00.PROTOCOLO\01.INVENTARIOS\ENTORNOS Y MAQUINAS --> excel con consolas WAS
+
+\\Rcpr231a.correos.es\sep\01. AREA DE SISTEMAS\04. SISTEMAS UNIX\03. SISTEMAS WAS\00.PROTOCOLO\02.PROCEDIMIENTOS\HERRAMIENTAS MONITORIZACION --> varias herramientas y docus
+
+______________________________________________________________________________________________________________________________________________
+
+
+
+
+
+AIX _________________ volumen volumenes ________________________________________________
+
+/usr/es/sbin/cluster/utilities/clRGinfo 
+
+3:36:04 PM: /usr/es/sbin/cluster/utilities/clshowres #para ver detalles de los recursos 
+
+________________________________________________________________________________________
+
+
+
+
+
+
+
+
+
+jboss-cli jbosscli loop bucle
+__________________________________________________________________
+
+uso while read por la salida del pipe
+
+/opt/jboss/jbosseap63/bin/jboss-cli.sh --connect controller=`hostname` "ls -l /profile=dino_Profile/subsystem" | while read i; do /opt/jboss/jbosseap63/bin/jboss-cli.sh --connect controller=`hostname` "/profile=dino_Profile/subsystem=${i}:read-resource(include-aliases=true,recursive=true)"; done
+
+en otros casos:
+
+
+for i in 'carmencu_Cluster balanzas_Cluster ps2c_bo_Cluster ps2c_ma_Cluster ps2c_ws_Cluster'; do /opt/jboss/jbosseap63/bin/jboss-cli.sh --connect controller=`hostname` "/server-group=${i}:restart-servers()";done
+
+
+_______________________________________________________________________________________________________
+
+
+
+
+
+SED
+sed "s/ /\//g"
+______________________________________________
+
+
+á
+PXA123
+
+/opt/WebSphere/scripts/monitorWAS_ALL/logs/sgieinterfaces/20180523/DataSource$ find . -name "*csv" -exec tail -1 {} \;
+
+
+ for i in 1 2 3 4 5 6; do echo "Maquina: pxa37${i}"; for j in a b c ; do echo "nodo: pxa37${i}${j}"; done;done
+
+____________________________________________________________________________________
+
+
+STARTEAM plg823:
+
+/opt/StarTeamCP_2009/bin
+
+./stcmd co -p E012038:Proteo2017@stm.correos.es:49201/CREEA/Software/2.Codigo\ Compilado/EAR/CREEA-CORREOS_V2.10.000/ -fp $HOME CREEA_v2_10.war
+[e012052@plg823 ~]$ cd -
+/opt/StarTeamCP_2009/bin
+TCPDUMP:
+________
+
+tcpdump -i en4 -s0 -w /tmp/admcex.pcap '((tcp) and ((host 10.98.7.187)))'
+
+si poness src o dst es SÓLO ORIGEN O DESTINO, precisamente para client hello y servere hello que necesitas respuesta no es útil.
+
+host y puerto = interfaz origen y puerto
+
+tcpdump -nni eth5:0 host 10.130.3.102 and port 443
+
+IHS 
+___
+
+
+test syntax:
+____________
+
+pxz113:/root # /opt/WebSphere/HTTPServer85/bin/apachectl -f /opt/WebSphere/HTTPServer85/conf/httpd_iris6telefonica.conf -t
+Syntax OK
+ldapsearch -B -ZK /db2tds/sisdir00/keys/noproductivo.kdb -D cn=root -w 301indio -b o=PUBLIC,o=CORREOS,c=ES "(&(uid= P015777))" 
+2:52:01 PM
+◄
+ldapsearch -B -ZK /db2tds/sisdir00/keys/noproductivo.kdb -D cn=root -w 301indio -b o=PUBLIC,o=CORREOS,c=ES "(&(uid= P015777))" ibm-allgroups 
+3:04:52 PM
+◄
+----------------------------- Modificar grupos -----------------------------
+Me han pedido modificar unos grupos; los pasos han sido:
+
+1) consultar el grupo actual del usuario
+
+-B do not suppress printing of non-ASCII values
+-Z use a secure LDAP connection (SSL)
+-K keyfile       file to use for keys
+-D bind dn
+-w bind password or '?' for non-echoed prompt
+-b base dn for search; LDAP_BASEDN in environment is default
+
+
+/opt/IBM/ldap/V6.1/bin/ldapsearch -B -ZK /db2tds/sisdir00/keys/tdsdmz.correosext.local.kdb -D cn=root -w 101indio -b o=public,o=correos,c=es "(mail=ZUZANA.GABRIS@MARINASALUD.ES)" ibm-allgroups
+
+OUTPUT:
+
+uid=MARINA SALUD,ou=Particulares,ou=Usuarios,o=PUBLIC,o=CORREOS,c=ES
+
+uid=MARINASALUD,ou=Particulares,ou=Usuarios,o=PUBLIC,o=CORREOS,c=ES
+
+uid=zuzana.gabris@marinasalud.es,ou=Particulares,ou=Usuarios,o=public,o=correos,c=es
+
+
+2) para modificarlo, genero un archivo ldif, en mi caso: /tmp/zuzana.ldif, con este contenido
+
+dn: cn=CORREOSPAQ_PRO_US_AUTH,ou=Roles,ou=correospaq,ou=Aplicaciones,o=public,o=correos,c=es
+changetype: modify
+add: uniqueMember
+uniqueMember: uid=zuzana.gabris@marinasalud.es,ou=Particulares,ou=Usuarios,o=public,o=correos,c=es
+
+
+3) invoco el siguiente comando para ejecutar la modificación:
+
+/opt/IBM/ldap/V6.1/bin/idsldapmodify -D cn=root -w 101indio -f /tmp/zuzana.ldif
+
+4) vuelvo a comprobar que se haya modificado:
+
+$ /opt/IBM/ldap/V6.1/bin/ldapsearch -B -ZK /db2tds/sisdir00/keys/tdsdmz.correosext.local.kdb -D cn=root -w 101indio -b o=public,o=correos,c=es "(mail=ZUZANA.GABRIS@MARINASALUD.ES)" ibm-allgroups
+
+OUTPUT:
+uid=MARINA SALUD,ou=Particulares,ou=Usuarios,o=PUBLIC,o=CORREOS,c=ES
+
+uid=MARINASALUD,ou=Particulares,ou=Usuarios,o=PUBLIC,o=CORREOS,c=ES
+
+uid=zuzana.gabris@marinasalud.es,ou=Particulares,ou=Usuarios,o=public,o=correos,c=es
+ibm-allgroups=cn=CORREOSPAQ_PRO_US_AUTH,ou=Roles,ou=correospaq,ou=Aplicaciones,o=public,o=correos,c=es
+ 
+
+_______________________________________________________________________________________________________
+
+
+Diferencias entre ProxyPass y ModRewrite
+
+ProxyPass /contexto destino
+
+lo que hace es llega la peticion a la pasarela y ésta actúa de proxy po rlo que emite una peticion hacia el destino convirtiendose la pasarela 
+en cliente a efectos de la comunicacion por lo que se vas a llegar a un destino ssl al ser el cliente la pasarela debera albergar las CA o firmantes del 
+destino. 
+
+ReriteRule -> si por ejemplo pones un 
+
+RewriteEngine on
+RewriteBase /
+RewriteRule (.*) http://www.newdomain.com/$1 [R=301,L]
+
+esto lo que hace es reescribir la peticion que el cliente originalmente realiza y se la devuelve al cliente
+ëste vuelve a emitir una nueva peticion hacia el destino y nuestro servidor ( el que contiene la redireccion ) ya no interviene
+en esa comunicacion.
+
+Efectos a la hora de que el cliente vea la url de destino--> si quieres que el navegador cliente vea el destino se utiliza Rewrite
+si no quieres que el cliente vea el destino por ejemplo que cuando el cliente envie www.correos.es/brujula  y  se dirija a https://brujula.es/fw 
+pero siga viendo www.corrreos.es hay que hacer proxypass o rewrite P ( no es muy aconsejable hacer rewrite P , para este caso mejor proxypass ). 
+En caso de que queiras que en el navegador cliente aparezca https://brujula.es/fw has de realizar una reescritura de URL. Rewrite.
+
+
+
+
+https://linchpinseo.com/htaccess-rules/
+
+
+RewriteRule ^/test.html$ - [S=1]    --->> evitar reescritura cuando se pone /
+________________________________________________________________________________________________________
+________________________________________________________________________________________________________
+jboss status / Status STATUS JBOSS
+
+
+/opt/jboss/jbosseap63/bin/jboss-cli.sh --connect controller=`hostname` "ls /host" | while read i ; do /opt/jboss/jbosseap63/bin/jboss-cli.sh --connect controller=`hostname` "ls /host=$i/server-config" | while read j ; do echo "Servidor: $j" ; /opt/jboss/jbosseap63/bin/jboss-cli.sh --connect controller=`hostname` "ls /host=$i/server-config=$j" | grep status ; done ; done
+
+
+wasadm@pla121:~$ for  i in pla393 pla394; do echo "Nodo ___________________________ " ${i}; /opt/jboss/jbosseap63/bin/jboss-cli.sh --connect controller=`hostname` "ls /host=$i/server-config" | while read j ; do echo "Servidor: $j" ; /opt/jboss/jbosseap63/bin/jboss-cli.sh --connect controller=`hostname` "ls /host=$i/server-config=$j" | grep status ; done;done
+Nodo ___________________________  pla393
+Servidor: pee_pla393
+status=STARTED
+Servidor: ps2c_bo_pla393
+status=STARTED
+Servidor: ps2c_ma_pla393
+status=STARTED
+Servidor: ps2c_ws_pla393
+status=STARTED
+Nodo ___________________________  pla394
+Servidor: pee_pla394
+status=STARTED
+Servidor: ps2c_bo_pla394
+status=STARTED
+Servidor: ps2c_ma_pla394
+status=STARTED
+Servidor: ps2c_ws_pla394
+status=STARTED
+
+
+
+
+
+
+________________________________________________________________________________________________________
+________________________________________________________________________________________________________
+
+yum YUM repolist repositorio repositories 
+
+para usar este repositorio : 
+
+yum --enablerepo=epel info zabbix
+yum --enablerepo=epel install zabbix
+
+
+
+
+
+
+
+________________________________________________________________________________________________________
+________________________________________________________________________________________________________
+
+
+Interxion acceso 
+__________________________ Máquina de salto: 
+
+me he fabricado un alias que contiene alias sshg="toxsocks ssh" por lo que :
+
+sshgs t012052@plz0221    ______________ usuario con t no con e
+
+las máquinas destino suelen necesitar una g por delante del nombre:
+
+plp0391. Desde la plz0221 --> ssh ( esta vez sin tox ) wasadm@gplp0391
+
+
+
+WINDOWS:PWC037, PWC038, RWC037
+
+RWC261.Correosint.es (INT GBS)  
+10.191.120.11  
+RWC262.Correosint.es (INT GBS)  
+10.191.120.12  
+RWZ263.Correosint.es (DMZ GBS)  
+10.191.131.11  
+RWZ264.Correosint.es (DMZ GBS)  
+
+
+
+10.191.131.12  
+PWC260.Correosint.es (INT ITX)  
+10.191.0.11  
+PWC270.Correosint.es (INT ITX)  
+10.191.0.12  
+PWZ265.Correosint.es (DMZ ITX)  
+10.191.11.11  
+PWZ266.Correosint.es (DMZ ITX)  
+10.191.11.12  
+__________________________________________________________________________________________________________
+
+
+
+GET PAGE
+________
+
+
+perl -MLWP::Simple  -e "getprint 'https://pxz113.correos.es:20277/test.html'"
+
+
+<html>
+<head>
+<title>Comprobacion de conexion</title>
+<style type="text/css">
+<!--
+h1      {text-align:center;
+        font-family:Arial, Helvetica, Sans-Serif;
+        }
+
+p       {text-indent:20px;
+        }
+-->
+</style>
+</head>
+<body bgcolor = "#ffffcc" text = "#000000">
+<h1>Comprobaci▒n de conexi▒n</h1>
+
+</body>
+</html>
+
+
+GET openssl
+___________
+
+
+openssl s_client -connect host:puerto
+
+
+openssl s_client -showcerts -connect webservices.nft.elcorteingles.es:443
+
+
+Ejemplo para ver cuando caduca: 
+	   echo | openssl s_client -connect lincepre.correos.es:443 2>/dev/null | openssl x509 -noout -dates -subject
+notBefore=Jan  4 15:32:12 2018 GMT
+notAfter=Jan  4 16:02:12 2021 GMT
+subject= /C=es/O=SOCIEDAD ESTATAL CORREOS Y TELEGRAFOS S. A./serialNumber=A83052407/CN=lincepre.correos.es
+
+
+
+certificates:
+
+for i in `find /opt/WebSphere/HTTPServer85/ssl -name '*.kdb'`;do echo $i; /opt/WebSphere/scripts/certificates/ikeyman.ctl.sh listAllCert $i "\$3m1ll@s" | grep 'NOMBREDELCERTIFICADO';echo "__________"; done
+
+P12 TO --> PEM  p12 to pem
+
+Si sólo quieres la clave privada:
+
+openssl pkcs12 -in path.p12 -out newfile.key.pem -nocerts -nodes
+
+Si quieres el cert la private key y las ca:
+
+openssl pkcs12 -in path.p12 -out newfile.key.pem -nodes
+__________________________________________________________________________________
+
+
+__________________________________________________________________________________________________________
+
+WEBSPHERE BORRAR APLICACION CON PROBLEMAS EN UN NODO SI ES EN LOS DOS MEJOR DESINSTALAR DESDE dmgr.
+
+directorios:
+
+config/cells/blas
+cus
+instalado
+config/cells/applications
+________________________________________________________________________________________________________
+
+KEYTOOL
+List
+/home/y9d5t1/a$ /apps/java/bin/keytool -list -keystore keystore.kdb -storepass qEg1hvNy
+
+
+PARA ACCEDER A LA AYUDA DE UNA OPERACION CONCRETA:
+
+y9d5t1@myMachine> :/home/y9d5t1/a$ /apps/java/bin/keytool -exportcert -help
+Picked up _JAVA_OPTIONS:  -Djava.net.preferIPv4Stack=true -Djava.net.preferIPv4Stack=true
+keytool -exportcert [OPTION]...
+
+Exports certificate
+
+Options:
+
+ -rfc                    output in RFC style
+ -alias <alias>          alias name of the entry to process
+ -file <file>            output file name
+ -keystore <keystore>    keystore name
+ -cacerts                access the cacerts keystore
+ -storepass <arg>        keystore password
+ -storetype <type>       keystore type
+ -providername <name>    provider name
+ -addprovider <name>     add security provider by name (e.g. SunPKCS11)
+   [-providerarg <arg>]    configure argument for -addprovider
+ -providerclass <class>  add security provider by fully-qualified class name
+   [-providerarg <arg>]    configure argument for -providerclass
+ -providerpath <list>    provider classpath
+ -v                      verbose output
+ -protected              password through protected mechanism
+
+Use "keytool -?, -h, or --help" for this help message
+
+______________________________________________________________________________________________
+
+
+showCert
+keytool -list -v -alias LabelDelCert -storepass claveDeKeyStore
+
+Import
+keytool -import -alias LaberlDelCert -keypass claveDelCert -file demoCA/cacert.pem -storepass claveDeKeyStore
+ImportCA
+keytool -import -alias LaberlDelCert -keypass claveDelCertCA -file demoCA/cacert.pem -keystore $JAVA_HOME/jre/lib/security/cacerts -storepass changeit
+
+
+PASAR A PEM
+
+
+
+jboss certificados con cacerts la contra es changeit
+
+1017  cd /opt/javavers/jdk1.5.0_22/jre/lib/
+ 1018  cd security/
+ 1019  ls -lrt\\RCPR238D\Temporal_Intercambio$
+ 1020  history | grep alias
+ 1021   /opt/javavers/jdk1.6.0_45/bin/keytool -list -v  -keystore /opt/javavers/jdk1.6.0_45/jre/lib/security/cacerts
+ 1022   /opt/javavers/jdk1.6.0_45/bin/keytool -list -v  -keystore /opt/javavers/jdk1.6.0_45/jre/lib/security/cacerts > /tmp/certs.txt
+ 1023  more /tmp/certs.txt
+ 1024  history
+ 
+ kill -9 `ps -eaf | grep -i java | grep -i wasadm | grep -v grep | awk '{print $2}'`
+ 
+ txa395:/etc # pwd
+/etc
+txa395:/etc # ./rc.was
+ 
+Feb 13, 2018
+ --- reiniciar una sola instancia de jboss:
+
+cd host=plz779/server-config=carmen_cu_plz779
+:restart()
+
+
+--- reiniciar todo un cluster de jboss:
+
+cd /server-group=carmen_dctm_Cluster
+ 
+  :restart-servers()
+
+
+
+se ha hecho con jbo\\RCPR238D\Temporal_Intercambio$ss cli pero se puede hacer sobre todo en maquinas de correos expres:
+
+/opt/Chrono/scripts/jboss/jboss.ctl.sh     para menosres de 7 <7
+
+[jboss@tlah567 jboss]$ ./jboss.ctl.sh
+
+Uso: sudo su - jboss -c "/opt/Chrono/scripts/jboss/jboss.ctl.sh [ checkURL | status | stop | forcestop | start | restart ] [  extranet  ]"
+
+
+
+
+para 7 :
+
+ sudo su - jboss -c "/opt/Chrono/scripts/jboss/jboss7.ctl.sh [  stop |  start | restart ] [  extranet_publica  ]"
+
+
+PARA PARAR NO FUNCIONA LO PARAN CON KILL -9
+
+
+BORRAR borrar archivos + de mtime con exlusion de ficheros gz
+
+find . -mtime +5 -not \( -iname "*.gz" \) -exec fr -fr {} \;
+
+excluir varios dirs:
+
+find -name "*.js" -not -path "./directory/*"
+
+find ./ -type f -name "*" ! -path "./.*" ! -path "./*/.*"
+
+
+en AIX:
+
+tar -L List.txt -cvf BKP.tar 
+
+List.txt es una lista de los archivo sque quieres empaquetar
+
+__________________________________________________________________________
+
+AIX puertos:
+
+netstat -aA | grep LISTEN
+
+rmsock f1000e00001b23b8 tcpcb
+
+ps auxwww| grep 4456648
+
+
+root      4456648  0.\\RCPR238D\Temporal_Intercambio$0  0.0 1004  904      - A      Jun 16  1:02 ./ctmagent/ctm/exe/p_ctmag
+wasadm    7733254  0.0  0.0  252  264  pts/0 A    13:39:44  0:00 grep 4456648
+
+
+para udp: use inpcb instead of tcpcb
+
+
+_________________________________________________________________________________________________________________
+
+LDAP
+
+ldapsearch -B -ZK  /db2tds/sisdir00/keys/noproductivo.kdb -D cn=root -w 301indio -b o=PUBLIC,o=CORREOS,c=ES "(&(uid= P015777))" 
+2:52:01 PM: Maria Jose Saiz Mainez *Contractor*: ldapsearch -B -ZK  /db2tds/sisdir00/keys/noproductivo.kdb -D cn=root -w 301indio -b o=PUBLIC,o=CORREOS,c=ES "(&(uid= P015777))"   ibm-allgroups 
+3:04:52 PM: Maria Jose Saiz Mainez *Contractor*: ----------------------------- Modificar grupos -----------------------------
+Me han pedido modificar unos grupos; los pasos han sido: 
+e
+1) consultar el grupo actual del usuario
+
+ /opt/IBM/ldap/V6.1/bin/ldapsearch -B -ZK /db2tds/sisdir00/keys/tdsdmz.correosext.local.kdb -D cn=root -w  101indio -b o=public,o=correos,c=es "(mail=ZUZANA.GABRIS@MARINASALUD.ES)" ibm-allgroups
+
+OUTPUT:
+
+uid=MARINA SALUD,ou=Particulares,ou=Usuarios,o=PUBLIC,o=CORREOS,c=ES
+
+uid=MARINASALUD,ou=Particulares,ou=Usuarios,o=PUBLIC,o=CORREOS,c=ES
+
+uid=zuzana.gabris@marinasalud.es,ou=Particulares,ou=Usuarios,o=public,o=correos,c=es
+
+
+2) para modificarlo, genero un archivo ldif, en mi caso: /tmp/zuzana.ldif, con este contenido
+
+dn: cn=CORREOSPAQ_PRO_US_AUTH,ou=Roles,ou=correospaq,ou=Aplicaciones,o=public,o=correos,c=es
+changetype: modify
+add: uniqueMember
+uniqueMember: uid=zuzana.gabris@marinasalud.es,ou=Particulares,ou=Usuarios,o=public,o=correos,c=es
+
+
+3) invoco el siguiente comando para ejecutar la modificación:
+
+/opt/IBM/ldap/V6.1/bin/idsldapmodify -D cn=root -w 101indio -f /tmp/zuzana.ldif
+
+4) vuelvo a comprobar que se haya modificado:
+
+$  /opt/IBM/ldap/V6.1/bin/ldapsearch -B -ZK /db2tds/sisdir00/keys/tdsdmz.correosext.local.kdb -D cn=root -w  101indio -b o=public,o=correos,c=es "(mail=ZUZANA.GABRIS@MARINASALUD.ES)" ibm-allgroups
+
+OUTPUT:
+uid=MARINA SALUD,ou=Particulares,ou=Usuarios,o=PUBLIC,o=CORREOS,c=ES
+
+uid=MARINASALUD,ou=Particulares,ou=Usuarios,o=PUBLIC,o=CORREOS,c=ES
+
+uid=zuzana.gabris@marinasalud.es,ou=Particulares,ou=Usuarios,o=public,o=correos,c=es
+ibm-allgroups=cn=CORREOSPAQ_\\RCPR238D\Temporal_Intercambio$PRO_US_AUTH,ou=Roles,ou=correospaq,ou=Aplicaciones,o=public,o=correos,c=es
+
+
+
+___________________________________________________________________________________________________________________________________________
+
+Maria Jose Saiz Mainez *Contractor*: 
+
+10:20:16 AM:  /opt/IBM/ldap/V6.4/bin/ldapsearch -B -D cn=root -w arquitect -b o=public,o=correos,c=es "objectclass=inetOrgPerson" DN |grep -i frandesa
+Así te da el DN entero
+ 
+
+10:20:50 AM: Y con este comando vemos a qué grupos pertenece 
+
+10:20:51 AM: /opt/IBM/ldap/V6.4/bin/ldapsearch -B -D cn=root -w arquitect -b o=public,o=correos,c=es "uid=FRANDESA" ibm-allgroups 
+
+
+
+
+
+
+
+
+
+
+
+
+
+ _____________________________________________________________________________________________________________________________________________________________
+
+
+RUTA en vez de SOFTWING:
+
+\\RCPR238D\Temporal_Intercambio$
+
+
+RUTA de pwsafe:
+
+\\Rcpr231a.correos.es\sep\01. AREA DE SISTEMAS\04. SISTEMAS UNIX\03. SISTEMAS WAS\HERRAMIENTAS MONITORIZACION 
+
+
+p12 to pem
+
+openssl pkcs12 -export -in XXX.p12 -out YYY.pem
+
+
+
+___________________________________________________________________________________________________________________
+
+pw0871 es una maquina windows que lleva soporte a produccion o monitorizacion ( es el mismo grupo ) desde la cual se lanzan sondas ( curl ) 
+
+cuando falla alguna llamada se nos abre incidencia, si no tenemos claro cual es la llamada hay que llamarles para que nos faciliten el curl y asi hacer el seguimiento de lo que haya fallado. 
+
+_____________________________________________________________________________________________________________________
+
+
+  Espacios en blanco de un archivo o sustituciones masivas_
+
+  perl -pi -e "s/<ruta_software>/${STRING_2}/g" ${TMP_DIR}/responsefile.${PRODUCTO_SELECCIONADO}.xml
+_____________________________________
+_______________________________________________________
+
+BORRAR borrar archivos de más de tres días
+
+find . -type f -mtime +3|xargs rm
+
+______________________________________
+
+___________________________________________________________________________________________________________________
+
+EDOC_RECEPCION_ENVIOS  edoc EDOC recepcion RECEPCION sonda 
+__________________________________________________________
+
+
+
+
+Comando lanzado:
+""D:\gsistemas\curl-7.31.0-devel-mingw32\bin\curl.exe" -# -k -w \n%{time_total}\n%{http_code} -m 30 -H "Content-Type: text/xml"  -u S001578:7Qf6Uhq0 -d @"D:\Gsistemas\EDOC_Recepcion_WS.xml" -X POST "https://fsgd.correos.es/agora-ws/services/ManagementEDocService" (https://fsgd.correos.es/agora-ws/services/ManagementEDocService') 
+Patron de busqueda: 
+
+#########                                                                 13,8%
+###################                                                       27,5%
+#############################                                             41,3%
+#######################################                                   55,1%
+#################################################                         68,9%
+###########################################################               82,6%
+#####################################################################     96,4%
+######################################################################## 100,0%
+30,000
+100
+curl: (28) Operation timed out after 30000 milliseconds with 0 out of -1 bytes received
+
+
+
+En las máquinas pxa707 / 8 correspondientes a Comun was 8.5 edocumentun 
+
+Puede haber en el systemOut : 
+
+[9/23/18 10:48:39:899 CEST] 0000006b ThreadMonitor W   WSVR0605W: La hebra "MessageListenerThreadPool : 15" (000004f2) lleva activa 694190 milisegundos y puede estar colgada.  Existen 15 he
+bras en total en el servidor que pueden estar colgadas.
+        at sun.nio.ch.FileDispatcherImpl.read0(Native Method)
+        at sun.nio.ch.SocketDispatcher.read(SocketDispatcher.java:52)
+        at sun.nio.ch.IOUtil.readIntoNativeBuffer(IOUtil.java:236)
+        at sun.nio.ch.IOUtil.read(IOUtil.java:210)
+        at sun.nio.ch.SocketChannelImpl.read(SocketChannelImpl.java:410)
+        at com.documentum.fc.impl.util.io.MessageChannel.readSocket(MessageChannel.java:123)
+        at com.documentum.fc.impl.util.io.MessageChannel.readLength(MessageChannel.java:100)
+        at com.documentum.fc.impl.util.io.MessageChannel.getIncomingMessageLength(MessageChannel.java:92)
+        at com.documentum.fc.impl.util.io.MessageChannel.read(MessageChannel.java:77)
+        at com.documentum.fc.client.impl.connection.netwise.AbstractNetwiseRpcClient.receiveMessage(AbstractNetwiseRpcClient.java:183)
+        at com.documentum.fc.client.impl.connection.docbase.netwise.NetwiseDocbaseRpcClient.applyForInt(NetwiseDocbaseRpcClient.java:568)
+        at com.documentum.fc.client.impl.connection.docbase.DocbaseConnection$6.evaluate(DocbaseConnection.java:1339)
+        at com.documentum.fc.client.impl.connection.docbase.DocbaseConnection.evaluateRpc(DocbaseConnection.java:1137)
+        at com.documentum.fc.client.impl.connection.docbase.DocbaseConnection.applyForInt(DocbaseConnection.java:1332)
+        at com.documentum.fc.client.impl.docbase.DocbaseApi.parameterizedSave(DocbaseApi.java:767)
+        at com.documentum.fc.client.DfSysObject$1.evaluate(DfSysObject.java:377)
+        at com.documentum.fc.client.impl.util.TransactionalFunctorWithRetry.evaluateUnderTransactionWithDeadlockRetry(TransactionalFunctorWithRetry.java:38)
+        at com.documentum.fc.client.impl.util.TransactionalFunctorWithRetry.evaluate(TransactionalFunctorWithRetry.java:25)
+        at com.documentum.fc.client.DfSysObject.evaluateUnderTransactionWithDeadlockRetry(DfSysObject.java:951)
+        at com.documentum.fc.client.DfSysObject.doSaveImpl(DfSysObject.java:405)
+        at com.documentum.fc.client.DfSysObject.doSave(DfSysObject.java:210)
+
+
+
+Puede haber en : /aplicaciones/was/edocumen/logs/nodeA/edoc_recepcion
+
+
+23/09/2018 11:30:19 [MessageListenerThreadPool : 29][ERROR][util.GestionarAlta] Recibido error del DAO:
+es.correos.edoc.sgd.core.SGDException: No se ha podido crear la ruta /SGIE/20180923/correos_envios_tblt_fvector : [DM_FOLDER_E_CONCUR_LINK_OPERATION_FAILURE]error:  "Cannot perfrom the link operation on folder (0b01845411d750f9), as some concurrent operation is being performed on the folder or decendant folder or ancesstor folder with folder id 0b01845411d1e1ca."
+        at es.correos.edoc.sgd.core.documentum.DocumentumSession.createPath(DocumentumSession.java:2574)
+        at es.correos.edoc.sgd.dao.impl.DAOUtil.crearRuta(DAOUtil.java:409)
+        at es.correos.edoc.sgd.dao.impl.DocumentoDAO.crearDocumento(DocumentoDAO.java:1252)
+        at es.correos.edoc.recepcion.util.GestionarAlta.ghttps://fsgd.correos.es/agora-ws/services/ManagementEDocServiceenerarAltaNueva(GestionarAlta.java:205)
+        at es.correos.edoc.recepcion.util.GestionarAlta.generarAlta(GestionarAlta.java:51)
+        at es.correos.edoc.recepcion.manager.impl.ProcesoRecepcionManagerImpl.procesarMensaje(ProcesoRecepcionManagerImpl.java:326)
+        at es.correos.edoc.recepcion.manager.impl.ProcesoRecepcionManagerImpl.crearDocumento(ProcesoRecepcionManagerImpl.java:117)
+        at es.correos.edoc.recepcion.ejb.RecepcionEAI.messageReceived(RecepcionEAI.java:22)
+        at es.correos.edoc.recepcion.ejb.view.EJSLocal0SLRecepcionEAI_0b71bac6.messageReceived(EJSLocal0SLRecepcionEAI_0b71bac6.java)
+        at es.correos.edoc.recepcion.mdb.EAIMDB.onMessage(EAIMDB.java:38)
+        at com.ibm.ejs.jms.listener.MDBWrapper$PriviledgedOnMessage.run(MDBWrapper.java:309)
+        at com.ibm.ws.security.util.AccessController.doPrivileged(AccessController.java:63)
+        at com.ibm.ejs.jms.listener.MDBWrapper.callOnMessage(MDBWrapper.java:266)
+        at com.ibm.ejs.jms.listener.MDBWrapper.onMessage(MDBWrapper.java:235)
+        at com.ibm.mq.jms.MQSession$FacadeMessageListener.onMessage(MQSession.java:133)
+        at com.ibm.msg.client.jms.internal.JmsSessionImpl.run(JmsSessionImpl.java:2913)
+        at com.ibm.msg.client.jms.internal.JmsXAQueueSessionImpl$1.run(JmsXAQueueSessionImpl.java:1007)
+        at com.ibm.mq.jms.MQSession.run(MQSession.java:958)
+        at com.ibm.ejs.jms.JMSSessionHandle.run(JMSSessionHandle.java:1056)
+        at com.ibm.ejs.jms.listener.ServerSession.connectionConsumerOnMessage(ServerSession.java:1110)
+        at com.ibm.ejs.jms.listener.ServerSession.onMessage(ServerSession.java:780)
+        at com.ibm.ejs.jms.listener.ServerSession.dispatch(ServerSession.java:746)
+        at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+        at sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:95)
+        at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:56)
+        at java.lang.reflect.Method.invoke(Method.java:620)
+        at com.ibm.ejs.jms.listener.ServerSessionDispatcher.dispatch(ServerSessionDispatcher.java:47)
+        at com.ibm.ejs.container.MDBWrapper.onMessage(MDBWrapper.java:100)
+        at com.ibm.ejs.container.MDBWrapper.onMessage(MDBWrapper.java:132)
+        at com.ibm.ejs.jms.listener.ServerSession.run(ServerSession.java:601)
+        at com.ibm.ws.util.ThreadPool$Worker.run(ThreadPool.java:1892)
+
+
+LLAMAR A ONDUTTY INFORMAR PARA QUE LLAME A HERRAMIENTAS Y ENVIAR LAS INCIDENCIAS A HERRAMIENTAS.
+
+No obstante se solicita a soporte produccion ( monitorizacion ) la llamada del evento:
+
+El Evento Fuente es: pw0871:/CORREOS-WEBSERVICES-INST/EDOC_Recepcion_WS/WS_WebserviceStatus que llama a :
+
+
+https://fsgd.correos.es/agora-ws/services/ManagementEDocService
+
+a ver qué devuelve. plp391 y plp392 ( webs de fsgd AGORA ) para este serivio ManagementEDocService
+
+WEB FSGD
+puedes ver algo así: 
+
+11.98.152.88 - - [23/Sep/2018:05:33:34 +0200] "POST /agora-ws/services/ManagementEDocService HTTP/1.1" 200 536 2,2543862 ajp://pla391.correos.es:8012
+11.98.152.88 - - [23/Sep/2018:05:43:36 +0200] "POST /agora-ws/services/ManagementEDocService HTTP/1.1" 200 536 4,4224727 ajp://pla391.correos.es:8012
+11.98.152.88 - - [23/Sep/2018:05:53:41 +0200] "POST /agora-ws/services/ManagementEDocService HTTP/1.1" 200 536 4,4699774 ajp://pla391.correos.es:8012
+11.98.152.88 - - [23/Sep/2018:06:23:51 +0200] "POST /agora-ws/services/ManagementEDocService HTTP/1.1" 200 536 2,2813414 ajp://pla391.correos.es:8012
+11.98.152.88 - - [23/Sep/2018:06:33:54 +0200] "POST /agora-ws/services/ManagementEDocService HTTP/1.1" 200 536 3,3076057 ajp://pla391.correos.es:8012
+11.98.152.88 - - [23/Sep/2018:06:43:57 +0200] "POST /agora-ws/services/ManagementEDocService HTTP/1.1" 200 536 2,2691763 ajp://pla391.correos.es:8012
+11.98.152.88 - - [23/Sep/2018:07:04:03 +0200] "POST /agora-ws/services/ManagementEDocService HTTP/1.1" 200 536 2,2936341 ajp://pla391.correos.es:8012
+11.98.152.88 - - [23/Sep/2018:07:14:06 +0200] "POST /agora-ws/services/ManagementEDocService HTTP/1.1" 200 536 3,3036089 ajp://pla391.correos.es:8012
+11.98.152.88 - - [23/Sep/2018:07:34:13 +0200] "POST /agora-ws/services/ManagementEDocService HTTP/1.1" 200 536 2,2860278 ajp://pla391.correos.es:8012
+11.98.152.88 - - [23/Sep/2018:07:54:19 +0200] "POST /agora-ws/services/ManagementEDocService HTTP/1.1" 200 536 3,3803334 ajp://pla391.correos.es:8012
+11.98.152.88 - - [23/Sep/2018:08:14:28 +0200] "POST /agora-ws/services/ManagementEDocService HTTP/1.1" 200 536 2,2562407 ajp://pla391.correos.es:8012
+11.98.152.88 - - [23/Sep/2018:08:24:30 +0200] "POST /agora-ws/services/ManagementEDocService HTTP/1.1" 200 536 2,2101901 ajp://pla392.correos.es:8012
+11.98.152.88 - - [23/Sep/2018:08:44:37 +0200] "POST /agora-ws/services/ManagementEDocService HTTP/1.1" 200 536 1,1942787 ajp://pla391.correos.es:8012
+11.98.152.88 - - [23/Sep/2018:08:54:39 +0200] "POST /agora-ws/services/ManagementEDocService HTTP/1.1" 200 536 2,2520639 ajp://pla391.correos.es:8012
+11.98.152.88 - - [23/Sep/2018:09:04:42 +0200] "POST /agora-ws/services/ManagementEDocService HTTP/1.1" 200 536 2,2755770 ajp://pla391.correos.es:8012
+11.98.152.88 - - [23/Sep/2018:09:44:51 +0200] "POST /agora-ws/services/ManagementEDocService HTTP/1.1" 500 535 300,300196422 ajp://pla391.correos.es:8012
+11.98.152.88 - - [23/Sep/2018:09:55:21 +0200] "POST /agora-ws/services/ManagementEDocService HTTP/1.1" 500 535 300,300171020 ajp://pla392.correos.es:8012
+11.98.152.88 - - [23/Sep/2018:10:05:52 +0200] "POST /agora-ws/services/ManagementEDocService HTTP/1.1" 500 535 300,300195130 ajp://pla391.correos.es:8012
+11.98.152.88 - - [23/Sep/2018:10:26:52 +0200] "POST /agora-ws/services/ManagementEDocService HTTP/1.1" 500 535 300,300172020 ajp://pla392.correos.es:8012
+11.98.152.88 - - [23/Sep/2018:10:37:22 +0200] "POST /agora-ws/services/ManagementEDocService HTTP/1.1" 500 535 300,300149852 ajp://pla391.correos.es:8012
+11.98.152.88 - - [23/Sep/2018:10:58:22 +0200] "POST /agora-ws/services/ManagementEDocService HTTP/1.1" 500 535 300,300304527 ajp://pla391.correos.es:8012
+11.98.152.88 - - [23/Sep/2018:11:08:52 +0200] "POST /agora-ws/services/ManagementEDocService HTTP/1.1" 500 535 300,300311096 ajp://pla391.correos.es:8012
+11.98.152.88 - - [23/Sep/2018:11:19:22 +0200] "POST /agora-ws/services/ManagementEDocService HTTP/1.1" 500 535 300,300223600 ajp://pla391.correos.es:8012
+11.98.152.88 - - [23/Sep/2018:11:29:52 +0200] "POST /agora-ws/services/ManagementEDocService HTTP/1.1" 500 535 300,300170590 ajp://pla391.correos.es:8012
+
+
+Esos 500 no significan que el servidor de agora pla391 o pla392 no preste servicio.
+
+Vas a las maquinas que contienen el jboss de fsgd pla391 / pla392 y en logs : /aplicaciones/was/fsgd/logs
+
+drwxr-xr-x 3 wasadm was      4096 sep 23 00:42 fsgd_pla391
+-rw-r--r-- 1 wasadm was         0 sep 23 03:36 audit.log
+-rw-r--r-- 1 wasadm was   1923923 sep 23 04:47 igsgd.log
+-rw-r--r-- 1 wasadm was     36022 sep 23 11:36 documentum.log
+-rw-r--r-- 1 wasadm was      3494 sep 23 11:36 fsgd.log
+
+
+
+
+
+
+se puede ver que nuestra parte el JBOSS de agora resuelve las peticiones de curl de la pw0871 devuelve 200 pero el contenido que devuelve  que es lo que nos ha pasado soporte a produccion o monitorizacion: 
+
+curl: (28) Operation timed out after 30000 milliseconds with 0 out of -1 bytes received
+
+es porque hay problemas en DOCUMENTUN
+
+
+La última columna de las llamadas es muy descriptiva: cuando va mal los tiempos se disparan.
+
+WAS FSGD
+wasadm@pla391:/aplicaciones/was/fsgd/logs/fsgd_pla391/access-log$
+11.98.152.88 - - [23/Sep/2018:07:34:16 +0200] POST /agora-ws/services/ManagementEDocService HTTP/1.1 200 536 - curl/7.31.0 - 2.839,2839
+11.98.152.88 - - [23/Sep/2018:07:54:23 +0200] POST /agora-ws/services/ManagementEDocService HTTP/1.1 200 536 - curl/7.31.0 - 3.749,3749
+11.98.152.88 - - [23/Sep/2018:08:14:30 +0200] POST /agora-ws/services/ManagementEDocService HTTP/1.1 200 536 - curl/7.31.0 - 2.527,2527
+11.98.152.88 - - [23/Sep/2018:08:34:36 +0200] POST /agora-ws/services/ManagementEDocService HTTP/1.1 200 536 - curl/7.31.0 - 3.630,3630
+11.98.152.88 - - [23/Sep/2018:08:44:39 +0200] POST /agora-ws/services/ManagementEDocService HTTP/1.1 200 536 - curl/7.31.0 - 1.918,1918
+11.98.152.88 - - [23/Sep/2018:08:54:42 +0200] POST /agora-ws/services/ManagementEDocService HTTP/1.1 200 536 - curl/7.31.0 - 2.503,2503
+11.98.152.88 - - [23/Sep/2018:09:04:45 +0200] POST /agora-ws/services/ManagementEDocService HTTP/1.1 200 536 - curl/7.31.0 - 2.735,2735
+11.98.152.88 - - [23/Sep/2018:09:24:48 +0200] POST /agora-ws/services/ManagementEDocService HTTP/1.1 200 536 - curl/7.31.0 - 2.021,2021
+11.98.152.88 - - [23/Sep/2018:11:43:25 +0200] POST /agora-ws/services/ManagementEDocService HTTP/1.1 200 536 - curl/7.31.0 - 2703.001,2703001
+11.98.152.88 - - [23/Sep/2018:11:43:25 +0200] POST /agora-ws/services/ManagementEDocService HTTP/1.1 200 536 - curl/7.31.0 - 812.965,812965
+11.98.152.88 - - [23/Sep/2018:11:43:25 +0200] POST /agora-ws/services/ManagementEDocService HTTP/1.1 200 536 - curl/7.31.0 - 2072.860,2072860
+11.98.152.88 - - [23/Sep/2018:11:43:25 +0200] POST /agora-ws/services/ManagementEDocService HTTP/1.1 200 536 - curl/7.31.0 - 3963.324,3963324
+11.98.152.88 - - [23/Sep/2018:11:43:25 +0200] POST /agora-ws/services/ManagementEDocService HTTP/1.1 200 536 - curl/7.31.0 - 5853.503,5853503
+11.98.152.88 - - [23/Sep/2018:11:43:25 +0200] POST /agora-ws/services/ManagementEDocService HTTP/1.1 200 536 - curl/7.31.0 - 7113.967,7113967
+11.98.152.88 - - [23/Sep/2018:11:43:25 +0200] POST /agora-ws/services/ManagementEDocService HTTP/1.1 200 536 - curl/7.31.0 - 1443.488,1443488
+
+
+wasadm@pla392:/aplicaciones/was/fsgd/logs/fsgd_pla392/access-log$ grep ManagementEDocService  access_log.2018-09-23
+11.98.152.88 - - [23/Sep/2018:00:02:13 +0200] POST /agora-ws/services/ManagementEDocService HTTP/1.1 200 536 - curl/7.31.0 - 2.935,2935
+11.98.152.88 - - [23/Sep/2018:00:32:22 +0200] POST /agora-ws/services/ManagementEDocService HTTP/1.1 200 536 - curl/7.31.0 - 2.294,2294
+11.98.152.88 - - [23/Sep/2018:03:52:56 +0200] POST /agora-ws/services/ManagementEDocService HTTP/1.1 200 536 - curl/7.31.0 - 9.640,9640
+11.98.152.88 - - [23/Sep/2018:04:03:01 +0200] POST /agora-ws/services/ManagementEDocService HTTP/1.1 200 536 - curl/7.31.0 - 5.250,5250
+11.98.152.88 - - [23/Sep/2018:05:13:30 +0200] POST /agora-ws/services/ManagementEDocService HTTP/1.1 500 227 - curl/7.31.0 - 1.040,1040
+11.98.152.88 - - [23/Sep/2018:05:23:35 +0200] POST /agora-ws/services/ManagementEDocService HTTP/1.1 200 536 - curl/7.31.0 - 4.146,4146
+11.98.152.88 - - [23/Sep/2018:06:13:51 +0200] POST /agora-ws/services/ManagementEDocService HTTP/1.1 200 536 - curl/7.31.0 - 2.578,2578
+11.98.152.88 - - [23/Sep/2018:06:54:03 +0200] POST /agora-ws/services/ManagementEDocService HTTP/1.1 200 536 - curl/7.31.0 - 2.532,2532
+11.98.152.88 - - [23/Sep/2018:07:44:19 +0200] POST /agora-ws/services/ManagementEDocService HTTP/1.1 200 536 - curl/7.31.0 - 2.902,2902
+11.98.152.88 - - [23/Sep/2018:08:04:26 +0200] POST /agora-ws/services/ManagementEDocService HTTP/1.1 200 536 - curl/7.31.0 - 3.255,3255
+11.98.152.88 - - [23/Sep/2018:08:24:32 +0200] POST /agora-ws/services/ManagementEDocService HTTP/1.1 200 536 - curl/7.31.0 - 2.092,2092
+11.98.152.88 - - [23/Sep/2018:09:14:46 +0200] POST /agora-ws/services/ManagementEDocService HTTP/1.1 200 536 - curl/7.31.0 - 1.534,1534
+11.98.152.88 - - [23/Sep/2018:09:34:51 +0200] POST /agora-ws/services/ManagementEDocService HTTP/1.1 200 536 - curl/7.31.0 - 2.345,2345
+11.98.152.88 - - [23/Sep/2018:11:43:25 +0200] POST /agora-ws/services/ManagementEDocService HTTP/1.1 200 536 - curl/7.31.0 - 3333.250,3333250
+11.98.152.88 - - [23/Sep/2018:11:43:25 +0200] POST /agora-ws/services/ManagementEDocService HTTP/1.1 200 536 - curl/7.31.0 - 4593.502,4593502
+11.98.152.88 - - [23/Sep/2018:11:43:25 +0200] POST /agora-ws/services/ManagementEDocService HTTP/1.1 200 536 - curl/7.31.0 - 6483.911,6483911
+11.98.152.88 - - [23/Sep/2018:11:43:25 +0200] POST /agora-ws/services/ManagementEDocService HTTP/1.1 200 536 - curl/7.31.0 - 5223.954,5223954
+11.98.152.88 - - [23/Sep/2018:11:43:25 +0200] POST /agora-ws/services/ManagementEDocService HTTP/1.1 200 536 - curl/7.31.0 - 183.133,183133
+11.98.152.88 - - [23/Sep/2018:11:50:53 +0200] POST /agora-ws/services/ManagementEDocService HTTP/1.1 200 536 - curl/7.31.0 - 1.022,1022
+
+
+ves la última columna, indica el de las 11:50 esta bien y el de las 9:34 tambien, luego se representan como errores 500 en el EDOC_RECEPCION_WS
+
+
+CUANDO HERRAMIENTAS CORRIGE EL DOCUMENTUN, LAS HEBRAS DE MESSAGELISTENER QUE ESTAN COLGADAS EN EDOC DEJAN DE ESTARLO LOGICAMENTE.
+____________________________________________________________________________________________________________________________________________
+____________________________________________________________________________________________________________________________________________
+
+awk
+
+corta por :
+
+awk -F: '{print $2}'
+
+ultimo campo:
+
+awk ‘{print $NF}’
+
+y las dos últimas
+ ps -fea  | grep java | awk '{print $1,$NF-1,$NF}'
+
+find . -mtime +5 \( ! -name "*.pid" \) -exec rm -fr {} \;
+
+
+for i in `df | grep aplicaciones | awk '{print $1}' | awk -F'/' '{print $3}'`;do echo $i; lslv $i| grep VOLUME ;done
+
+
+AWK_________________ awk array
+
+
+ <specialEndpoints xmi:id="NamedEndPoint_1183122129649" endPointName="WC_adminhost_secure">
+      <endPoint xmi:id="EndPoint_1183122129649" host="*" port="12105"/>
+    </specialEndpoints>
+    <specialEndpoints xmi:id="NamedEndPoint_1183122129650" endPointName="WC_defaulthost_secure">
+      <endPoint xmi:id="EndPoint_1183122129650" host="*" port="12101"/>
+    </specialEndpoints>
+    <specialEndpoints xmi:id="NamedEndPoint_1183122129651" endPointName="SIP_DEFAULTHOST">
+      <endPoint xmi:id="EndPoint_1183122129651" host="*" port="5075"/>
+
+
+
+
+
+Buscar un puerto en el serverindex.xm y que te diga a qué corresponde ese puerto: buscamos el 12101
+que es el puerto WC_defaulthost_secure
+
+dxz203:/root# cat /opt/WebSphere/AppServer85/profiles/TDSWebAdminProfile/config/cells/DefaultNode/nodes/DefaultNode/serverindex.xml | awk '{array[++i]=$0} /12101/ {print array[i-1]}'
+    <specialEndpoints xmi:id="NamedEndPoint_1183122129650" endPointName="WC_defaulthost_secure">
+
+
+
+
+___________________________________________________________________________________________________________________________
+status jboss apps app
+
+/opt/jboss/jbosseap63/bin/jboss-cli.sh --connect controller=`hostname` "ls /host" | while read i ; do /opt/jboss/jbosseap63/bin/jboss-cli.sh --connect controller=`hostname` "ls /host=$i/server-config" | while read j ; do echo "Servidor: $j" ; /opt/jboss/jbosseap63/bin/jboss-cli.sh --connect controller=`hostname` "ls /host=$i/server-config=$j" | grep status ; done ; done
+
+______________________________________________________________________________________________________________
+
+
+
+
+
+____________________________________________________________________
+máquinas standalone este es el puerto del controller en jboss 7 plah561 562 ...
+
+
+./jboss-cli.sh --connect  controller=`hostname`:10099
+
+/subsystem=datasources/data-source=CorreosExpressDS/statistics=pool:read-resource(include-runtime=true)
+
+____________________________________________________________________
+
+modificaciones jboss:
+
+
+ /profile=carmen_cu_Profile/subsystem=datasources/data-source=jdbcCarmenNONXA/:write-attribute(name=max-pool-size,value=20)
+
+
+
+_______________________________________________________________________________________________
+
+
+SWAP
+sysctl vm.swappiness
+cat /proc/25336/maps
+cat /proc/25336/status
+
+for file in /proc/*/status ; do awk '/VmSwap|Name/{printf $2 " " $3}END{ print ""}' $file; done | sort -k 2 -n -r | less
+
+
+___________________________________________________
+
+WAS  create profile y addNode ojo con el hostname y el nodename
+
+/opt/WebSphere/AppServer85/bin/manageprofiles.sh -create -profileName ProCorreosServidores -profilePath /opt/WebSphere/AppServer85/profiles/ProCorreosServidores -templatePath /opt/WebSphere/AppServer85/profileTemplates/managed -hostName t4pxa707.correos.es -nodeName t4pxa707 -federateLater true
+
+
+
+
+addNode pxa123.correos.es 8879 -dmgrAdminUserName 'CN=Administrador_was,OU=websphere,OU=Applications,OU=Users,OU=Internet,DC=correos,DC=es' -dmgrAdminPassword 'adm1n1strad0r'
+
+
+
+___________________________________________________________________________________________________________________
+
+
+certificados en apache.
+
+_____________________________________________________________________
+
+
+backupconfig BACKUP CONFIG 
+
+
+ ./backupConfig.sh ../backupConfigDir/backupConfig_CertCorreosDmgr.bk -profileName CertCorreosDmgr -logfile ../backupConfigDir/backupConfigLogFile.txt
+
+
+borrado del perfil.
+
+wasadm@dxa121:/opt/WebSphere/AppServer70/bin$ ./manageprofiles.sh -delete -profileName ForCorreosDmgr
+
+
+restore config
+
+wasadm@dxa121:/opt/WebSphere/AppServer70/bin$ ./restoreConfig.sh ../backupConfigDir/backupConfigForCorreosDmgr/backupConfig_ForCorreosDmgr.zip
+
+
+
+restaurar de backup: mv /opt/WebSphere/AppServer70/profiles /opt/WebSphere/AppServer70/profiles.old
+y una vez que no existe el dir:
+
+dsmc res /opt/WebSphere/AppServer70/profiles/* -subdir=yes -replace=no
+______________________________________________________
+
+
+ikeyman modo grafico.
+moba 
+
+abrir isa5 plg222fc / temp0ral
+comprobar
+
+
+xclock 
+
+luego conectar ssh -X wasadm@pxz113 
+
+luego al cargar ikeyman va benne
+
+__________________________________________________________
+
+wire shark para ver los client hello
+
+
+wireshark -o http:ssl.port:636
+
+
+
+JBOSS -cli jboss-cli cli jboss
+_____________________________________________________________
+
+
+Para cambiar el dominio de los host si al crearlos el campo DN_SUFFIX estaba equivocado.
+
+
+ls /profile=dino_Profile/subsystem=jgroups/stack=tcpping/protocol=TCPPING/property=initial_hosts:write-attribute(name=value,value="dla391.correospre.es[7617], dla392.correospre.es[7617],")
+value=dla391.correos.es[7617], dla392.correos.es[7617],
+[domain@dla121.correospre.es:9999 /] /profile=dino_Profile/subsystem=jgroups/stack=tcpping/protocol=TCPPING/property=initial_hosts:write-attribute(name=value,value="dla391.correospre.es[7617], dla392.correospre.es[7617],")
+
+
+
+______________________________________________________________________________________________________
+
+
+comandos AIX nmon
+
+
+nmon 
+dentro c para cpu
+m memoria 
+n otra d ememoria 
+s y d disco ...
+
+
+lo suyo es pasarle esto:
+
+nmon -s 15 -ft -c 9999
+
+
+    -f : para especificar que vamos a volcar las estadísticas a un archivo.
+    -s : para configurar el período de muestreo.
+    -c : para configurar la cantidad de minutos por la que se va a recabar datos.
+    -t : para incluir los procesos que figuran en el top.
+
+luego :
+
+De esta manera se guardan los datos hasta que decidamos terminar el proceso (normalmente luego de finalizada la ejecución de una prueba en particular). Para hacer esto, hacemos lo siguiente:
+
+ps ax | grep nmon 
+
+kill -9 <PID de NMON>
+
+para matarlo y los datos están en /home/wasadm ( con el usuario que lo hayas ejecutado )
+
+
+genera un .csv te lo traes a local y ejecutas:
+
+java -jar ../../../NMONVisualizer_2018-04-10.jar
+
+
+los tienes en el escritorio en herramientas_AIX
+
+
+
+
+_________________________________________________________________________________________________________________________
+SSL IHS default ciphers depends on version
+__________________________________________
+
+Mirar configuración SSL de las pasarelas por defecto (pero no lo que tiene definido el IHS)
+ /opt/WebSphere/HTTPServer85/bin/apachectl -t -f /opt/WebSphere/HTTPServer85/conf/httpd_iris6prepaidfin.conf -DDUMP_SSL_CIPHERS
+
+
+Mirar lo que tiene definido el fichero de configuración del IHS
+
+wasadm@txz113:~$ /opt/WebSphere/HTTPServer85/bin/apachectl -t -f /opt/WebSphere/HTTPServer85/conf/httpd_iris6prepaidfin.conf -DDUMP_SSL_CONFIG 
+_________________________________________________________________________________________________________________________________
+
+
+
+
+curl http://url:puerto/contextos  -k  evita cert 
+
+si ademas necesitas user y password 
+
+-u user:password al final 
+
+PETICIONES CON PROXY:
+
+http_proxy=http://192.168.1.102:3128 curl -v http://36501:1.correosexpress.com:8080/tunnel-web/secure/axis/Portal_RoleService
+
+
+
+________________________________________________________________________________________________________________________________________________________
+
+
+Pasarelas APACHE ( para ihs no va esto ) con certificado CLIENTE
+
+
+SSLClientAuth 2
+SSLClientAuthRequire CommonName="BKPRO01" || CommonName="BKPRO01, AC SUB 2 CORREOS" || CommonName="clienteBKPRO01" || CommonName="clienteBKPRO01, AC SUB 2 CORREOS"     
+
+
+esto es que el Cliente ha de enviar un cert con common name similar a las opciones.
+
+Para comprobar vía curl si se dispone de las dos partes del certificado puby priv key:
+
+curl -vki --cert /opt/WebSphere/HTTPServer85/ssl/linceinterbox/clienteBKPRO01.cer --key /opt/WebSphere/HTTPServer85/ssl/linceinterbox/clienteBKPRO01.key https://pxz113.correos.es:20231/test.html
+
+
+
+Por último para configurar pasarelas y excepcionar una páfiga concreta al cert cliente:
+
+<LocationMatch ^/(?!test.html)[^.]*$>
+                RequestHeader set SSL_CLIENT_CERT ""
+                SSLOptions +ExportCertData (obligatorio) +StdEnvVars +StrictRequire ** 
+                SSLVerifyClient require ** (obligatorio)
+                #INC000002203943
+                SSLRenegBufferSize 11000000
+                #SSLVerifyClient none
+                SSLVerifyDepth 10 **  (obligatorio)
+                RequestHeader set SSL_CLIENT_CERT "%{SSL_CLIENT_CERT}s" ** (obligatorio)
+</LocationMatch> 
+his is only useful if SSLVerifyClient optional is in effect.
+
+The following example grants access if the user is authenticated either with a client certificate or by username and password.
+
+
+
+PARA IHS:
+
+https://developer.ibm.com/answers/questions/246111/ihs-ssl-mutual-authentication-for-only-some-pages/
+
+
+
+APACHES:_______________________
+
+ SSLProxyMachineCertificateFile /etc/httpd/ssl/tsom/joaquingonzalez.pem
+        SSLProxyCACertificateFile /etc/httpd/ssl/tsom/joaquingonzalezCA.pem
+
+
+_______________________________________________________________________________________________________________________________________
+HA MANAGER CORE GROUPS
+_______________________________________________________________________________________________________________________________________
+
+wasadm@dxa123:/aplicaciones/was/DesaCorreos/logs$ grep -i coordinator SystemOut.log
+
+
+
+
+[2/15/19 11:38:35:481 CET] 00000067 CoordinatorIm I   HMGR0228I: The Coordinator is not an Active Coordinator for core group DefaultCoreGroup. The active coordinator set is [DesaCorreos\dxa395\nodeagent, DesaCorreos\dxa396\nodeagent].
+[2/15/19 11:38:35:481 CET] 00000067 CoordinatorIm I   HMGR0218I: A new core group view has been installed. The core group is DefaultCoreGroup. The view identifier is (2960:0.DesaCorreos\NodoDesaCorreosDmgr\dmgr). The number of members in the new view is 57.
+[2/15/19 11:38:39:785 CET] 00000067 CoordinatorIm I   HMGR0228I: The Coordinator is not an Active Coordinator for core group DefaultCoreGroup. The active coordinator set is [DesaCorreos\dxa395\nodeagent, DesaCorreos\dxa396\nodeagent].
+[2/15/19 11:38:39:785 CET] 00000067 CoordinatorIm I   HMGR0218I: A new core group view has been installed. The core group is DefaultCoreGroup. The view identifier is (2961:0.DesaCorreos\NodoDesaCorreosDmgr\dmgr). The number of members in the new view is 56.
+[2/15/19 12:24:49:850 CET] 00000067 CoordinatorIm I   HMGR0228I: The Coordinator is not an Active Coordinator for core group DefaultCoreGroup. The active coordinator set is [DesaCorreos\dxa395\nodeagent, DesaCorreos\dxa396\nodeagent].
+[2/15/19 12:24:49:850 CET] 00000067 CoordinatorIm I   HMGR0218I: A new core group view has been installed. The core group is DefaultCoreGroup. The view identifier is (2962:0.DesaCorreos\NodoDesaCorreosDmgr\dmgr). The number of members in the new view is 58.
+[2/17/19 19:19:48:395 CET] 00000067 CoordinatorIm I   HMGR0228I: The Coordinator is not an Active Coordinator for core group DefaultCoreGroup. The active coordinator set is [DesaCorreos\dxa395\nodeagent, DesaCorreos\dxa396\nodeagent].
+
+
+_______ Ubicacion de archivo coregoups:
+
+wasadm@dxa123:/opt/WebSphere/AppServer85/profiles/DesaCorreosDmgr/config/cells/DesaCorreos/coregroups/DefaultCoreGroup$ cat coregroup.xml
+<?xml version="1.0" encoding="UTF-8"?>
+<coregroup:CoreGroup xmi:version="2.0" xmlns:xmi="http://www.omg.org/XMI" xmlns:coregroup="http://www.ibm.com/websphere/appserver/schemas/6.0/coregroup.xmi" xmi:id="builtin_CoreGroup_1080665362339" name="DefaultCoreGroup" description="Default Core Group. The default core group cannot be deleted." coreGroupUID="3a9b28e3:1458e04e443:-8000" numCoordinators="2" multiCastPort="23445" multiCastGroupIPStart="239.0.0.0" multiCastGroupIPEnd="239.255.255.255" channelChainName="DCS" transportType="CHANNEL_FRAMEWORK" transportMemorySize="100" preferredCoordinatorServers="CoreGroupServer_1398264234053 CoreGroupServer_1398264531917 CoreGroupServer_1407148359078 CoreGroupServer_1407149319313">
+  <policies xmi:type="coregroup:OneOfNPolicy" xmi:id="OneOfNPolicy_1080665362419" name="Default SIBus Policy" description="SIBus One-Of-N Policy" policyFactory="com.ibm.ws.hamanager.coordinator.policy.impl.OneOfNPolicyFactory" isAlivePeriodSec="120" quorumEnabled="false" failback="false" preferredOnly="false">
+    <MatchCriteria xmi:id="MatchCriteria_1085173008228" name="type" value="WSAF_SIB" description="Default SIBus MatchCriterion"/>
+  </policies>
+  <policies xmi:type="coregroup:OneOfNPolicy" xmi:id="OneOfNPolicy_1080665362420" name="Clustered TM Policy" description="TM One-Of-N Policy" policyFactory="com.ibm.ws.hamanager.coordinator.policy.impl.OneOfNPolicyFactory" isAlivePeriodSec="120" quorumEnabled="false" failback="true" preferredOnly="false">
+    <MatchCriteria xmi:id="MatchCriteria_1085173008229" name="type" value="WAS_TRANSACTIONS" description="Default TM MatchCriteria"/>
+  </policies>
+  <policies xmi:type="coregroup:AllActivePolicy" xmi:id="AllActivePolicy_1203449041659" name="Default Sip Quorum Policy" description="SIP All-active-policy with quorum disabled by default" policyFactory="com.ibm.ws.hamanager.coordinator.policy.impl.AllActivePolicyFactory" isAlivePeriodSec="0" quorumEnabled="false">
+    <MatchCriteria xmi:id="MatchCriteria_1203449180638" name="type" value="SIP_QUORUM" description="Default SIP MatchCriteria"/>
+  </policies>
+  <coreGroupServers xmi:id="CoreGroupServer_1" nodeName="NodoDesaCorreosDmgr" serverName="dmgr"/>
+  <coreGroupServers xmi:id="CoreGroupServer_1398264234053" nodeName="dxa396" serverName="nodeagent"/>   ESTE ES EL COORDINADOR POR DEFECTO 
+  <coreGroupServers xmi:id="CoreGroupServer_1398264531917" nodeName="dxa395" serverName="nodeagent"/>
+  <coreGroupServers xmi:id="CoreGroupServer_1398265127915" nodeName="dxa395" serverName="gisc2des_dxa395"/>
+  <coreGroupServers xmi:id="CoreGroupServer_1398265147157" nodeName="dxa396" serverName="gisc2des_dxa396"/>
+  <coreGroupServers xmi:id="CoreGroupServer_1398322621360" nodeName="dxa395" serverName="adides_dxa395"/>
+  <coreGroupServers xmi:id="CoreGroupServer_1398322635098" nodeName="dxa396" serverName="adides_dxa396"/>
+  <coreGroupServers xmi:id="CoreGroupServer_1401272467742" nodeName="dxa395" serverName="cocal_dxa395"/>
+  <coreGroupServers xmi:id="CoreGroupServer_1401272478797" nodeName="dxa396" serverName="cocal_dxa396"/>
+  <coreGroupServers xmi:id="CoreGroupServer_1401438619502" nodeName="dxa395" serverName="horus_dxa395"/>
+  <coreGroupServers xmi:id="CoreGroupServer_1401439096389" nodeName="dxa396" serverName="horus_dxa396"/>
+  <coreGroupServers xmi:id="CoreGroupServer_1407148359078" nodeName="dxa397" serverName="nodeagent"/>
+  <coreGroupServers xmi:id="CoreGroupServer_1407149319313" nodeName="dxa398" serverName="nodeagent"/>
+  <coreGroupServers xmi:id="CoreGroupServer_1407152763849" nodeName="dxa397" serverName="seic_dxa397"/>
+  <coreGroupServers xmi:id="CoreGroupServer_1407152774655" nodeName="dxa398" serverName="seic_dxa398"/>
+
+______________ EL COORDINADOR POR DEFECTO ES EL PRIMERO DE ESTA LISTA SIEMPRE _________
+
+______________ FICHERO HA _____________________________________________________________
+
+wasadm@dxa123:/opt/WebSphere/AppServer85/profiles/DesaCorreosDmgr/config/cells/DesaCorreos/nodes/NodoDesaCorreosDmgr/servers/dmgr$ cat hamanagerservice.xml
+<?xml version="1.0" encoding="UTF-8"?>
+<hamanagerservice:HAManagerService xmi:version="2.0" xmlns:xmi="http://www.omg.org/XMI" xmlns:hamanagerservice="http://www.ibm.com/websphere/appserver/schemas/6.0/hamanagerservice.xmi" xmi:id="HAManagerService_1080665401693" enable="true" description="Template version of HAManager service." activateEnabled="true" isAlivePeriodSec="120" transportBufferSize="10" coreGroupName="DefaultCoreGroup">
+  <threadPool xmi:id="ThreadPool_1080665401693" name="HAManagerService.Pool" minimumSize="2" maximumSize="6" inactivityTimeout="5000" isGrowable="true"/>
+
+
+wasadm@dxa123:/opt/WebSphere/AppServer85/profiles/DesaCorreosDmgr/config/cells/DesaCorreos/nodes/dxa397/servers/edocumen_dxa397$ cat hamanagerservice.xml
+<?xml version="1.0" encoding="UTF-8"?>
+<hamanagerservice:HAManagerService xmi:version="2.0" xmlns:xmi="http://www.omg.org/XMI" xmlns:hamanagerservice="http://www.ibm.com/websphere/appserver/schemas/6.0/hamanagerservice.xmi" xmi:id="HAManagerService_1080665401693" enable="true" description="Template version of HAManager service." activateEnabled="true" isAlivePeriodSec="120" transportBufferSize="10" coreGroupName="DefaultCoreGroup">
+  <threadPool xmi:id="ThreadPool_1080665401693" name="HAManagerService.Pool" minimumSize="2" maximumSize="6" inactivityTimeout="5000" isGrowable="true"/>
+</hamanagerservice:HAManagerService>
+
+es el mismo fichero para todos los servers
+
+_________________________________________________________________________________________
+
+RULES:
+
+All the members of a core group must belong to same cell
+•
+A cell can contain more than one core group
+
+por eso existen los bridges, para comunicar dos coregroups.
+
+All of the cluster members must belong to the same core group
+•
+A core group can contain more than one cluster
+
+
+
+----
+
+
+DefaultCoreGroupd definition will suffice
+
+In a large WAS topology additional core groups may be required. 
+
+-Scalability 
+-Performance
+-Existence of Firewall between cell members
+-Geographically separated cell members
+-Also a placeholder for HAManager disabled servers 
+
+
+
+___________________________________  CHANGE a NODE or DMGR PROFILE HOSTNAME hostname __________________
+
+
+wasadm@dxa123:/opt/WebSphere/AppServer85/profiles/DesaCorreosDmgr/bin$ wsadmin.sh -lang jython
+
+WASX7209I: Connected to process "dmgr" on node NodoDesaCorreosDmgr using SOAP connector;  The type of process is: DeploymentManager
+WASX7031I: For help, enter: "print Help.help()"
+
+wsadmin>AdminConfig.list('ServerIndex')
+
+
+'(cells/DesaCorreos/nodes/NodoDesaCorreosDmgr|serverindex.xml#ServerIndex_1)\n(cells/DesaCorreos/nodes/dxa395|serverindex.xml#ServerIndex_1)\n(cells/DesaCorreos/nodes/dxa396|serverindex.xml#ServerIndex_1)\n(cells/DesaCorreos/nodes/dxa397|serverindex.xml#ServerIndex_1)\n(cells/DesaCorreos/nodes/dxa398|serverindex.xml#ServerIndex_1)\n(cells/DesaCorreos/nodes/dxp395webS3|serverindex.xml#ServerIndex_1444313600973)\n(cells/DesaCorreos/nodes/dxp395webactp|serverindex.xml#ServerIndex_1407172536664)\n(cells/DesaCorreos/nodes/dxp395webadides|serverindex.xml#ServerIndex_1398323771002)\n(cells/DesaCorreos/nodes/dxp395webalbaranes|serverindex.xml#ServerIndex_1409156557788)\n(cells/DesaCorreos/nodes/dxp395webcocal|serverindex.xml#ServerIndex_1401273172419)\n(cells/DesaCorreos/nodes/dxp395webconsultalogsdxa397|serverindex.xml#ServerIndex_1429614354155)\n(cells/DesaCorreos/nodes/dxp395webconsultalogsdxa398|serverindex.xml#ServerIndex_1429616282925)\n(cells/DesaCorreos/nodes/dxp395webcorreospaqbo|serverindex.xml#ServerIndex_1480087831761)\n(cells/DesaCorreos/nodes/dxp395webdctm|serverindex.xml#ServerIndex_1469283824447)\n(cells/DesaCorreos/nodes/dxp395webduapost|serverindex.xml#ServerIndex_1411409641067)\n(cells/DesaCorreos/nodes/dxp395webedocumen|serverindex.xml#ServerIndex_1470313123439)\n(cells/DesaCorreos/nodes/dxp395webgescan|serverindex.xml#ServerIndex_1418072633740)\n(cells/DesaCorreos/nodes/dxp395webgisc2des|serverindex.xml#ServerIndex_1398770200396)\n(cells/DesaCorreos/nodes/dxp395webgpvo|serverindex.xml#ServerIndex_1421049056640)\n(cells/DesaCorreos/nodes/dxp395webhorus|serverindex.xml#ServerIndex_1401440122967)\n(cells/DesaCorreos/nodes/dxp395weblince|serverindex.xml#ServerIndex_1407506137211)\n(cells/DesaCorreos/nodes/dxp395webmaestros|serverindex.xml#ServerIndex_1421252913689)\n(cells/DesaCorreos/nodes/dxp395webmccbo|serverindex.xml#ServerIndex_1429176723295)\n(cells/DesaCorreos/nodes/dxp395webmercurio|serverindex.xml#ServerIndex_1425457524607)\n(cells/DesaCorreos/nodes/dxp395weboca3|serverindex.xml#ServerIndex_1419421685801)\n(cells/DesaCorreos/nodes/dxp395webov2bo|serverindex.xml#ServerIndex_1429196815034)\n(cells/DesaCorreos/nodes/dxp395webpbc|serverindex.xml#ServerIndex_1447675624931)\n(cells/DesaCorreos/nodes/dxp395webpda|serverindex.xml#ServerIndex_1407166896748)\n(cells/DesaCorreos/nodes/dxp395webradiomaritima|serverindex.xml#ServerIndex_1408369980181)\n(cells/DesaCorreos/nodes/dxp395webscmf|serverindex.xml#ServerIndex_1412694586998)\n(cells/DesaCorreos/nodes/dxp395websedi|serverindex.xml#ServerIndex_1454942990910)\n(cells/DesaCorreos/nodes/dxp395webseic|serverindex.xml#ServerIndex_1407155462771)\n(cells/DesaCorreos/nodes/dxp395websgtc|serverindex.xml#ServerIndex_1423745101893)\n(cells/DesaCorreos/nodes/dxp395websicer3|serverindex.xml#ServerIndex_1418724618735)\n(cells/DesaCorreos/nodes/dxp395websie|serverindex.xml#ServerIndex_1415963799894)'
+
+
+COMANDO MODIFICAR NOMBRE HOST DEL DMGR O DE LOS NODOS:
+
+AdminConfig.modify('(cells/DesaCorreos/nodes/NodoDesaCorreosDmgr|serverindex.xml#ServerIndex_1)',  "[[hostName new_host_name]]")
+
+______________________________________________________
+
+
+eSTE COMANDO VARIARÁ EL HOSTNAME DEL SERVERINDEX ASOCIADO YA SEA DE UN NODO DE OTRO.
+
+
+
+wasadm@dxa123:/opt/WebSphere/AppServer85/profiles/DesaCorreosDmgr/config/cells/DesaCorreos/nodes/NodoDesaCorreosDmgr$ cat serverindex.xml
+<?xml version="1.0" encoding="UTF-8"?>
+<serverindex:ServerIndex xmi:version="2.0" xmlns:xmi="http://www.omg.org/XMI" xmlns:serverindex="http://www.ibm.com/websphere/appserver/schemas/5.0/serverindex.xmi" xmi:id="ServerIndex_1" hostName="desnd85.correospre.es" endPointRefs="NamedEndPoint_1 NamedEndPoint_2">
+  <serverEntries xmi:id="ServerEntry_1" serverDisplayName="dmgr" serverName="dmgr" serverType="DEPLOYMENT_MANAGER">
+    <deployedApplications>WebSphereWSDM.ear/deployments/WebSphereWSDM</deployedApplications>
+    <deployedApplications>isclite.ear/deployments/isclite</deployedApplications>
+    <deployedApplications>OTiS.ear/deployments/OTiS</deployedApplications>
+    <deployedApplications>correospaq_backoffice_ear.ear/deployments/correospaq_backoffice_ear</deployedApplications>
+    <deployedApplications>eugbatch_ear.ear/deployments/eugbatch_ear</deployedApplications>
+    <specialEndpoints xmi:id="NamedEndPoint_1" endPointName="CELL_DISCOVERY_ADDRESS">
+      <endPoint xmi:id="EndPoint_1" host="desnd85.correospre.es" port="7277"/>
+    </specialEndpoints>
+    <specialEndpoints xmi:id="NamedEndPoint_2" endPointName="BOOTSTRAP_ADDRESS">
+      <endPoint xmi:id="EndPoint_2" host="desnd85.correospre.es" port="9809"/>
+    </specialEndpoints>
+    <specialEndpoints xmi:id="NamedEndPoint_3" endPointName="IPC_CONNECTOR_ADDRESS">
+      <endPoint xmi:id="EndPoint_3" host="${LOCALHOST_NAME}" port="9632"/>
+    </specialEndpoints>
+    <specialEndpoints xmi:id="NamedEndPoint_4" endPointName="SOAP_CONNECTOR_ADDRESS">
+      <endPoint xmi:id="EndPoint_4" ho
+
+
+
+
+ADEMAS..... en ZOS existe :
+
+Modify the host name for the Daemon instance as it applies to the application server, node agent, and deployment manager.
+
+
+AdminTask.modifyNodeGroupProperty('DefaultNodeGroup', '[ -name was.WAS_DAEMON_protocol_iiop_daemon_listenIPAddress -value newHostname]')
+
+
+_________________________________________________________
+EN RESUMEN -> para revisar el hostname que tiene cadanodo o en este caso el dmgr:listamos los serverindex de cada nodo y luego elegimos uno, en este caso dmgr.
+
+wsadmin>AdminConfig.List('ServerIndex')
+WASX7015E: Exception running command: "AdminConfig.List('ServerIndex')"; exception information:
+com.ibm.bsf.BSFException: exception from Jython:
+Traceback (innermost last):
+  File "<input>", line 1, in ?
+AttributeError: List
+
+wsadmin>AdminConfig.list('ServerIndex')
+'(cells/DesaCorreos/nodes/NodoDesaCorreosDmgr|serverindex.xml#ServerIndex_1)\n(cells/DesaCorreos/nodes/dxa395|serverindex.xml#ServerIndex_1)\n(cells/DesaCorreos/nodes/dxa396|serverindex.xml#ServerIndex_1)\n(cells/DesaCorreos/nodes/dxa397|serverindex.xml#ServerIndex_1)\n(cells/DesaCorreos/nodes/dxa398|serverindex.xml#ServerIndex_1)\n(cells/DesaCorreos/nodes/dxp395webS3|serverindex.xml#ServerIndex_1444313600973)\n(cells/DesaCorreos/nodes/dxp395webactp|serverindex.xml#ServerIndex_1407172536664)\n(cells/DesaCorreos/nodes/dxp395webadides|serverindex.xml#ServerIndex_1398323771002)\n(cells/DesaCorreos/nodes/dxp395webalbaranes|serverindex.xml#ServerIndex_1409156557788)\n(cells/DesaCorreos/nodes/dxp395webcocal|serverindex.xml#ServerIndex_1401273172419)\n(cells/DesaCorreos/nodes/dxp395webconsultalogsdxa397|serverindex.xml#ServerIndex_1429614354155)\n(cells/DesaCorreos/nodes/dxp395webconsultalogsdxa398|serverindex.xml#ServerIndex_1429616282925)\n(cells/DesaCorreos/nodes/dxp395webcorreospaqbo|serverindex.xml#ServerIndex_1480087831761)\n(cells/DesaCorreos/nodes/dxp395webdctm|serverindex.xml#ServerIndex_1469283824447)\n(cells/DesaCorreos/nodes/dxp395webduapost|serverindex.xml#ServerIndex_1411409641067)\n(cells/DesaCorreos/nodes/dxp395webedocumen|serverindex.xml#ServerIndex_1470313123439)\n(cells/DesaCorreos/nodor the application server and node agent, update the node with the changes.es/dxp395webgescan|serverindex.xml#ServerIndex_1418072633740)\n(cells/DesaCorreos/nodes/dxp395webgisc2des|serverindex.xml#ServerIndex_1398770200396)\n(cells/DesaCorreos/nodes/dxp395webgpvo|serverindex.xml#ServerIndex_1421049056640)\n(cells/DesaCorreos/nodes/dxp395webhorus|serverindex.xml#ServerIndex_1401440122967)\n(cells/DesaCorreos/nodes/dxp395weblince|serverindex.xml#ServerIndex_1407506137211)\n(cells/DesaCorreos/nodes/dxp395webmaestros|serverindex.xml#ServerIndex_1421252913689)\n(cells/DesaCorreos/nodes/dxp395webmccbo|serverindex.xml#ServerIndex_1429176723295)\n(cells/DesaCorreos/nodes/dxp395webmercurio|serverindex.xml#ServerIndex_1425457524607)\n(cells/DesaCorreos/nodes/dxp395weboca3|serverindex.xml#ServerIndex_1419421685801)\n(cells/DesaCorreos/nodes/dxp395webov2bo|serverindex.xml#ServerIndex_1429196815034)\n(cells/DesaCorreos/nodes/dxp395webpbc|serverindex.xml#ServerIndex_1447675624931)\n(cells/DesaCorreos/nodes/dxp395webpda|serverindex.xml#ServerIndex_1407166896748)\n(cells/DesaCorreos/nodes/dxp395webradiomaritima|serverindex.xml#ServerIndex_1408369980181)\n(cells/DesaCorreos/nodes/dxp395webscmf|serverindex.xml#ServerIndex_1412694586998)\n(cells/DesaCorreos/nodes/dxp395websedi|serverindex.xml#ServerIndex_1454942990910)\n(cells/DesaCorreos/nodes/dxp395webseic|serverindex.xml#ServerIndex_1407155462771)\n(cells/DesaCorreos/nodes/dxp395websgtc|serverindex.xml#ServerIndex_1423745101893)\n(cells/DesaCorreos/nodes/dxp395websicer3|serverindex.xml#ServerIndex_1418724618735)\n(cells/DesaCorreos/nodes/dxp395websie|serverindex.xml#ServerIndex_1415963799894)'
+wsadmin>AdminConfig.show('(cells/DesaCorreos/nodes/NodoDesaCorreosDmgr|serverindex.xml#ServerIndex_1)', 'hostName')
+'[hostName desnd85.correospre.es]'
+
+
+_________________________________________________
+
+Si modificas Algo: 
+
+AdminConfig.save()
+
+__________________________________________________________________________________________________________________________________________________________________________________
+
+
+Por último stopNode.sh o stop dmgr y syncNode.sh
+_________________________________________________________________
+
+REPLACE CELL NAME
+
+
+1. connect to dmgr process;
+
+ ./wsadmin.sh -lang jython -conntype NONE
+
+2. change cell name and save.
+
+AdminTask.renameCell('[-newCellName ********* -regenCerts true -changeSetupCmdBat true]')
+
+AdminConfig.save()
+
+3. change node name and save.
+
+AdminTask.renameNode('[-nodeName ********* -newNodeName *********]')
+
+AdminConfig.save()
+
+ 
+
+Also, you can rename it interactive mode,
+
+AdminTask.renameCell ('[-interactive]')
+AdminTask.renameNode ('[-interactive]')
+
+ 
+
+On the other hand;
+
+Unfortunately, the commands for cell rename and node rename is not changing parameters which is in the setupCmdLine.sh file.
+
+Locate the profiles folder and find the required profile(dmgr or node profiles);
+
+vi ../profiles/Dmgr/bin/setupCmdLine.sh and change the names for,
+
+WAS_CELL=*********
+WAS_NODE=*********
+
+___________________________________________________________________________________
+
+
+HA Manager services are required for any of the following:
+
+
+ME fail over in a cluster
+Transaction Log Recovery in a cluster
+Replication Domain members
+EJB’s (RMI IIOP) in a cluster
+Proxy Server (SIP, HTTP, WS-AT, WS-Addressing)
+Remote Session Invalidation (RRD)
+WebSphere XD
+WebSphere Process Server (Inbound JCA RA, Event Sequencin
+
+____________________________________________________________________________________
+
+//evitar test.html en apache es así.
+RewriteRule ^/test.html$ - [S=1]
+
+
+______________________________________________________________________
+
+mq en jboss propiedades, chanel port hostName host:
+
+ls /profile=carmencu_Profile/subsystem=resource-adapters/resource-adapter=wmq.jmsra.rar/connection-definitions=CARMENQueueMQFactory/config-properties=hostName
+
+_________________________________________________________________________
+
+
+
+
+keytool Windows win 
+
+D:\PerformaceTuningToolking\PerformanceTuningToolkit2.0.0.9\jre\jre\bin 
+
+
+
+___________________________________________________________________________
+
+python para hacer pruebas de conexion origen-destino
+
+
+#!/usr/bin/python
+
+import socket
+import time
+import sys
+import os
+
+retry = 1 
+delay = 1
+timeout = 1 
+
+def isOpen(ip, port):
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        s.settimeout(timeout)
+        try:
+                s.connect((ip, int(port)))
+                s.shutdown(socket.SHUT_RDWR)
+                return True
+        except:
+                return False
+        finally:
+                s.close()
+
+def checkHost(ip, port):
+        ipup = False
+        for i in range(retry):
+                if isOpen(ip, port):
+                        ipup = True
+                        break
+                else:
+                        time.sleep(delay)
+                        print "--- connection ***REFUSED*** to host ---", ip, "-", port 
+        return ipup
+
+"""
+   MAIN
+"""
+
+if len(sys.argv) != 3:
+   os.system('clear')
+   print "Usage --- python connectionPortState.py <ip-address> <port-number>"
+else:
+   ip = sys.argv[1]
+   port = sys.argv[2] 
+   if checkHost(ip, port):
+      print "conection open to host ---", ip, "-", port
+
+
+_________________________________________________________________________________________
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+____________________________________________________________________________
+

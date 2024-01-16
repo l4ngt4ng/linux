@@ -1,0 +1,161 @@
+IHS y LDAP
+https://www.ibm.com/support/knowledgecenter/en/SSAW57_8.5.5/com.ibm.websphere.ihs.doc/ihs/tihs_ldapconfig.html
+
+Authorization header
+https://devhacksandgoodies.wordpress.com/2014/06/27/apache-pass-authorization-header-to-phps-_serverhttp_authorization/
+
+https://stackoverflow.com/questions/5110361/what-is-the-http-authorization-environment-variable
+
+
+Location
+https://httpd.apache.org/docs/2.4/mod/core.html#location
+
+RewriteRule no está aconsejado incluirlo dentro de Location
+
+Dentro del virtual host.
+La configuración con LDAP debe estar incluida en Location
+
+        # Autenticacion con LDAP
+        SetEnvIf Authorization "(.*)" MiAuthorization=$1 ---> establece la variable de entorno MiAuthorization si la petición tiene un header llamado Authorization (y su valor es cualquier valor)
+		El valor de MiAuthorization es el contenido del header Authorization
+        <Location /preregistroenvios>
+                # Configuración para validación directa contra LDAP
+                #Satisfy all
+                LDAPConfigFile /opt/WebSphere/HTTPServer85/conf/ldappreregistro.prop
+                AuthType Basic
+                AuthName "preregistroenvios"
+                LDAPRequire group PREREGISTROENVIOS_PRE_US_AUTH
+                Require valid-user
+
+                RequestHeader unset Authorization
+        </Location>
+
+Otro ejemplo (txz113, httpd_nuevawebcanonico.conf)
+
+<VirtualHost localizadorpre.correosextpre.local:443>
+        ServerName localizadorpre.correosextpre.local
+        DocumentRoot "/aplicaciones/web/nuevawebcanonico/instalado"
+        FileETag none
+        SSLEnable
+        SSLProtocolEnable SSLv3
+        SSLServerCert localizadorpre.correosextpre.local.cer
+        Keyfile /opt/WebSphere/HTTPServer85/ssl/nuevawebcanonico/nuevawebcanonico.kdb
+        SSLStashfile /opt/WebSphere/HTTPServer85/ssl/nuevawebcanonico/nuevawebcanonico.sth
+        SSLV2Timeout 100
+        SSLV3Timeout 1000
+        SSLProxyEngine On
+        ProxyRequests Off
+        RewriteEngine on
+
+        # Autenticacion con LDAP CRQ000000106441
+        SetEnvIf Authorization "(.*)" MiAuthorization=$1
+        <Location ~ "/canonico/(eventos_envio_servicio_auth|eventos_envio_servicio_desa_auth)">
+                LDAPConfigFile /opt/WebSphere/HTTPServer85/conf/ldapnuevawebcanonico.prop
+                AuthType Basic
+                AuthName "nuevawebcanonico"
+                LDAPRequire group CANONICO_PRE_US_AUTHMERCHANTS
+                Require valid-user
+                RequestHeader unset Authorization
+        </Location>
+
+        #RewriteCond %{REQUEST_URI} ^/canonico/eventos_envio_servicio$ [NC]
+        RewriteRule ^/canonico/eventos_envio_servicio/(.*) https://esbpre.correosextpre.local:7848/canonico/eventos_envio_servicio/$1 [P,L]
+        ProxyPassReverse /canonico/eventos_envio_servicio https://esbpre.correosextpre.local:7848/canonico/eventos_envio_servicio
+
+        # CRQ000000106441, se aganaden tres reglas mas, dos con autenticacion con LDAP
+        RewriteRule ^/canonico/eventos_envio_servicio_desa/(.*) https://esbdesav2.correosextpre.local:7848/canonico/eventos_envio_servicio/$1 [P,L]
+        ProxyPassReverse /canonico/eventos_envio_servicio_desa/(.*) https://esbdesav2.correosextpre.local:7848/canonico/eventos_envio_servicio/$1 [P,L]
+
+
+        RewriteRule ^/canonico/eventos_envio_servicio_auth/(.*) https://esbpre.correosextpre.local:7848/canonico/eventos_envio_servicio/$1 [P,L]
+        ProxyPassReverse /canonico/eventos_envio_servicio_auth/(.*) https://esbpre.correosextpre.local:7848/canonico/eventos_envio_servicio/$1 [P,L]
+
+        RewriteRule ^/canonico/eventos_envio_servicio_desa_auth/(.*) https://esbdesav2.correosextpre.local:7848/canonico/eventos_envio_servicio/$1 [P,L]
+        ProxyPassReverse /canonico/eventos_envio_servicio_desa_auth/(.*) https://esbdesav2.correosextpre.local:7848/canonico/eventos_envio_servicio/$1 [P,L]
+
+        RewriteLog /aplicaciones/web/nuevawebcanonico/logs/rewrite.log
+        RewriteLogLevel 2
+
+        LogLevel debug
+        ErrorLog "|/opt/WebSphere/HTTPServer85/bin/rotatelogs /aplicaciones/web/nuevawebcanonico/logs/ssl_nuevawebcanonico-error.log.%Y%m%d 86400"
+        CustomLog "|/opt/WebSphere/HTTPServer85/bin/rotatelogs /aplicaciones/web/nuevawebcanonico/logs/ssl-nuevawebcanonico-access.log.%Y%m%d 86400" SSL
+</VirtualHost>
+
+
+---------------------------
+En sametime con Ash
+
+<Location /preregistroenvios>
+                # Configuración para validación directa contra LDAP
+                #Satisfy all
+                LDAPConfigFile /opt/WebSphere/HTTPServer85/conf/ldapnuevawebcanonico.prop
+                AuthType Basic
+                AuthName "preregistroenvios"
+                LDAPRequire group PREREGISTROENVIOS_PRE_US_AUTH
+                Require valid-user
+
+                RequestHeader unset Authorization
+        </Location>
+ 
+11:12:11: Maria.Jose.Saiz.Mainez1@es.ibm.com - Maria Jose Saiz Mainez1/Spain/Contr/IBM: https://www.ibm.com/support/knowledgecenter/en/SSAW57_8.5.5/com.ibm.websphere.ihs.doc/ihs/tihs_ldapconfig.html 
+11:16:30: Achraf Imrani Chacour *Contractor*: <Location ~ "/(extra|special)/data">  
+
+Pasos:
+	1. Configurado IHS para autenticar con LDAP
+	2. Crear el fichero de propiedades de LDAP que es referenciado en el fichero de configuración de IHS. Configurar los parámetros necesarios para la pasarela (usuario de bind, fichero stash con la password del usuario de bind, fichero de claves para comunicar IHS con TDS ...)
+
+Crear stashfile
+/opt/WebSphere/HTTPServer85/bin/ldapstash -c /opt/WebSphere/HTTPServer85/conf/ldap/S002355.sth crypto 6cxdJyu3Cr
+
+	3. Crear el fichero tdsum /etc/opt/tdsum/tdsum_aplicación.conf y configurar el usuario actualizador, fichero stash ...
+	4. Crear fichero vacío /opt/WebSphere/HTTPServer85/conf/aplicacion_users
+
+
+NOTAS del fichero de configuración de LDAP en IHS
+	1. El filtro del usuario siempre tiene que ser uid, puesto que en Correos se estableció que para identificar usuarios normales se usaba uid y para identificar usuarios de bind se utilizaba cn. Campo ldap.user.name.filter. El campo ldap.user.cert.filter no se está utilizando
+	
+        2. ldap.application.password.stashFile=/etc/opt/tdsum/serviciorecogidas.sth Este fichero contiene la password del usuario de bind específico para ese servicio. Se deja en /opt/WebSphere/HTTPServer85/conf/ldap
+	
+	3. ldap.key.file.password.stashfile Contiene la password del almacen de certificados para establecer conexion SSL entre IHS y TDS (todas las configuraciones comparten el mismo puesto que es el mismo almacén que el configurado en TDS). La firma
+	
+	4. Los usuarios que se crean para acceder al IHS y ser autenticados en LDAP pertenecen a la rama empresas.... Normalmente el rol tiene la coletilla "MERCHANTS" ya que se asocia a Empresas.
+	
+	5. Para hacer pruebas (se cambia el cn=root al usuario de bind).
+ /opt/IBM/ldap/V6.1/bin/ldapsearch -B -ZK /db2tds/sisdir00/keys/tdsdmz.correosext.local.kdb -D cn=root -w 101indio -b ou=Aplicaciones,o=public,o=correos,c=es  "(&(cn=SERVICIORECOGIDAS_PRO_US_AUTHMERCHANTS)(|(objectclass=groupofnames)(objectclass=groupofuniquenames)))" member uniquemember
+cn=SERVICIORECOGIDAS_PRO_US_AUTHMERCHANTS,ou=Roles,ou=serviciorecogidas,ou=Aplicaciones,o=public,o=correos,c=es --> Este comando funciona
+uniquemember=cn=root
+
+	Para hacer en remoto
+
+/opt/IBM/ldap/V6.3/bin/ldapsearch -h pxz201 -p 636 -B -ZK /opt/WebSphere/HTTPServer85/conf/ldap/tdsdmz.correosext.local.kdb -D cn=root -w 101indio -b ou=Aplicaciones,o=public,o=correos,c=es  "(&(cn=SERVICIORECOGIDAS_PRO_US_AUTHMERCHANTS)(|(objectclass=groupofnames)(objectclass=groupofuniquenames)))" member uniquemember
+
+     Se cambia cn= por el grupo configurado en IHS
+
+
+====================================================================================================================================================
+CRQ000000119014 httpd_logisticainversa.conf
+
+Para excluir la página de test de autenticación con LDAP incluir lo siguiente en Location
+
+               ######### Exclude test.html from LDAP authorization ########
+               SetEnvIf Request_URI /test.html allow
+               Order allow,deny
+               Allow from env=allow
+               Satisfy any
+               ######## End exclude test.html #########
+
+
+=====================================================================================================================================================
+   	Consulta que realiza el IHS para ver si puede acceder un usuario o no
+	
+	bash-4.2$ /opt/IBM/ldap/V6.1/bin/ldapsearch -B -ZK /db2tds/sisdir00/keys/tdsdmz.correosext.local.kdb -D cn=root -w 101indio -b ou=Aplicaciones,o=public,o=correos,c=es  "(&(cn=SERVICIORECOGIDAS_PRO_US_AUTHMERCHANTS)(|(objectclass=groupofnames)(objectclass=groupofuniquenames)))" member uniquemember
+
+
+cn=SERVICIORECOGIDAS_PRO_US_AUTHMERCHANTS,ou=Roles,ou=serviciorecogidas,ou=Aplicaciones,o=public,o=correos,c=es
+
+En el cn= se indica el nombre del grupo que se ha configurado en el IHS
+
+Sacado de aquí
+https://www.ibm.com/support/knowledgecenter/en/SSEQTJ_8.5.5/com.ibm.websphere.ihs.doc/ihs/tihs_ldapconfig.html
+
+=====================================================================================================================================================

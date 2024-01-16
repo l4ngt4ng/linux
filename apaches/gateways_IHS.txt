@@ -1,0 +1,180 @@
+Coloque un archivo de claves de certificado SSL válido en una ubicación accesible en el sistema.
+Para configurar IBM HTTP Server para procesar solicitudes SSL, edite el archivo httpd.conf, que se encuentra en el directorio conf de la instalación de IBM HTTP Server.
+
+    Descomente estos módulos:
+        LoadModule proxy_module modules/mod_proxy.so
+        LoadModule proxy_http_module modules/mod_proxy_http.so
+        LoadModule ibm_ssl_module modules/mod_ibm_ssl.so
+    Vaya a la sección de configuración SSL y establezca los detalles del servidor de aplicaciones. Además de los valores estándar, asegúrese de que los siguientes parámetros se hayan establecido, como se muestra en el ejemplo de este paso.
+        SSLProxyEngine
+        ProxyPass
+        ProxyPassReverse
+
+
+
+
+
+
+
+
+Puede configurar IBM HTTP Server como un proxy inverso para Rational DOORS Web Access. Un servidor proxy inverso proporciona una capa adicional de seguridad, protege los servidores HTTP en la red y mejora el rendimiento de las solicitudes SSL (capa de sockets seguros). Cuando se utiliza un proxy inverso, puede cambiarse la topología de despliegue más adelante, según se requiera.
+Antes de empezar
+
+    Instale Rational DOORS Web Access, pero no inicie los componentes o el servidor de Rational DOORS Web Access.
+    Instale IBM HTTP Server.
+
+Acerca de esta tarea
+Un servidor proxy inverso es un servidor HTTP especial que impide el acceso directo al servidor HTTP de contenido. Todas las solicitudes de contenido pasan a través de un URI de servidor proxy inverso visible públicamente y, a continuación, se redirigen al URI del servidor de Rational DOORS Web Access privado.
+El uso de un servidor proxy inverso proporciona varias ventajas:
+
+    Cambios posteriores de topología de despliegue: si utiliza un proxy inverso en el despliegue, puede proporcionar un nombre de host en el URL público independientemente de en cuántas máquinas y números de puerto se despliegan las aplicaciones. Como resultado, puede cambiar la topología de despliegue más adelante.
+    Seguridad: el servidor proxy inverso proporciona una capa adicional de seguridad y puede proteger a otros servidores HTTP en la red de comunicaciones. Si utiliza un cortafuegos entre el servidor proxy inverso y el servidor HTTP de contenido, puede configurar el cortafuegos para permitir únicamente solicitudes HTTP desde el servidor proxy inverso.
+    Rendimiento: puede equipar el servidor proxy inverso con hardware de aceleración SSL para mejorar el rendimiento de las solicitudes SSL.
+
+En este procedimiento, siga estos pasos:
+
+    Prepare el almacén de claves SSL.
+    Modifique el archivo httpd.conf.
+    Inicie IBM HTTP Server.
+    Inicie los componentes de Rational DOORS Web Access.
+    Inicie el servidor de Rational DOORS Web Access.
+
+Procedimiento
+
+    Coloque un archivo de claves de certificado SSL válido en una ubicación accesible en el sistema.
+    Para configurar IBM HTTP Server para procesar solicitudes SSL, edite el archivo httpd.conf, que se encuentra en el directorio conf de la instalación de IBM HTTP Server.
+        Descomente estos módulos:
+            LoadModule proxy_module modules/mod_proxy.so
+            LoadModule proxy_http_module modules/mod_proxy_http.so
+            LoadModule ibm_ssl_module modules/mod_ibm_ssl.so
+        Vaya a la sección de configuración SSL y establezca los detalles del servidor de aplicaciones. Además de los valores estándar, asegúrese de que los siguientes parámetros se hayan establecido, como se muestra en el ejemplo de este paso.
+            SSLProxyEngine
+            ProxyPass
+            ProxyPassReverse
+    Nota
+    En este ejemplo, el puerto de proxy visible para los usuarios finales se establece en 8443. En función del entorno, el puerto configurado para que lo utilice Apache Tomcat se puede definir en un valor diferente para evitar conflictos de puerto.
+
+    # Habilitar el puerto que está a la escucha de solicitudes SSL de cliente
+    Listen 0.0.0.0:8443
+    <VirtualHost *:8443>   
+    # La directiva SSLEnable habilita SSL para el host virtual.
+    SSLEnable     
+
+    # SSLProxyEngine conmuta si el servidor utiliza SSL para conexiones de proxy.
+    # SSLProxyEngine on es necesario si el servidor actúa como un proxy inverso para un recurso SSL.
+    # Depende de mod_ibm_ssl.so
+    SSLProxyEngine on    
+
+    # La directiva SSLProtocolDisable permite especificar uno o más protocolos SSL que el
+    # cliente no puede utilizar para un host virtual específico.
+    # Esta directiva debe estar en un contenedor <VirtualHost>.
+    # Los protocolos soportados para un host virtual están soportados por separado.
+    # Si todos los protocolos soportados se inhabilitan, los clientes no pueden completar un reconocimiento SSL.
+    # Están disponibles los siguientes valores posibles para esta directiva: SSLv2, SSLv3, TLS, TLSv1, TLSv1.1, TLSv1.2
+    SSLProtocolDisable SSLv2  
+    SSLProtocolDisable SSLv3   
+
+    # La directiva keyfile define el archivo de claves que se utilizará.
+    KeyFile <vía_almacén_claves>/<nombre_archivo_almacén_claves>.kdb
+
+    # La directiva SSLStashfile indica la vía de acceso al archivo con el nombre de archivo
+    # que contiene la contraseña cifrada para abrir el dispositivo PKCS11.
+    # Depende de mod_ibm_ssl.so
+    SSLStashfile <vía_acceso_a_archivo_stash>/.<nombre_archivo_stash>.sth
+
+    # La directiva SSLServerCert define el certificado de servidor que se utilizará para el host virtual.
+    # Depende de mod_ibm_ssl.so
+    SSLServerCert <etiqueta_certificado_ssl>
+
+    # Esta directiva permite a los servidores remotos correlacionarse con el espacio del servidor local;
+    # el servidor local no actúa como proxy en el sentido convencional, sino que aparece como un duplicado del servidor remoto.
+    # <Vía_acceso> es el nombre de una vía de acceso virtual local.
+    # <url> es un URL parcial para el servidor remoto.
+    # ProxyPass <Vía_acceso> <url>
+    # Nota: conserve la barra inclinada final
+    ProxyPass / https://<host_dwa_tomcat>:<puerto_dwa_tomcat>/
+
+    # Esta directiva permite que Apache ajuste el URL en la cabecera Ubicación en las respuestas de redirección HTTP.
+    # Esta funcionalidad es esencial cuando Apache se utiliza como un proxy inverso, para evitar que se omita el
+    # proxy inverso debido a redirecciones HTTP en los servidores de fondo, que permanecen detrás de proxy inverso.
+    # <Vía_acceso> es el nombre de una vía de acceso virtual local.
+    # <url> es un URL parcial para el servidor remoto - se utilizan del mismo modo que para la directiva ProxyPass.
+    # ProxyPassReverse <Vía_acceso> <url>
+    # Nota: conserve la barra inclinada final
+    ProxyPassReverse / https://<host_dwa_tomcat>:<puerto_dwa_tomcat>/
+
+    # Esta opción pasará la línea Host: de la solicitud entrante al host de proxy, en lugar del
+    # nombre de host privado especificado en la línea proxypass.
+    ProxyPreserveHost On
+
+    </VirtualHost>
+
+    # Inhabilitar SSL para los demás hosts virtuales a menos que se configure explícitamente
+    SSLDisable
+    copy to clipboard
+
+    Inicie IBM HTTP Server.
+    Inicie los componentes de Rational DOORS Web Access.
+    Inicie el servidor de Rational DOORS Web Access.
+    Establezca el URL público y puerto de Rational DOORS Web Access en el servidor proxy reverso especificando este mandato dbadmin:
+
+    dbadmin -dwaHost url_proxy_inverso -dwaPort número_puerto_proxy_inverso
+    copy to clipboard
+
+    Para obtener más información sobre el mandato dbadmin, consulte Configuración del servidor de base de datos de Rational DOORS.
+
+Conceptos relacionados:
+Instalación de Rational DOORS Web Access
+Inicio, detención y eliminación de Rational DOORS Web Access
+
+
+
+
+____________________________________________________________________
+
+PASWORD KDB .sth
+________________
+
+La contra del certificado por defecto y la del almacen han de ser la misma. Si se cambia el certificado por defecto del almacén y éste tiene una contra diferente al anterior, hay que actualizar la contra del almacen a la del nuevo certificado por defecto.
+
+/opt/WebSphere/scripts/certificates/ikeyman.ctl.sh changePasswordDB [path_FileDB] [passwordDB] [newPassword] [repeat_newPassword]
+
+
+que hace : 
+	$JAVA_HOME/bin/java com.ibm.gsk.ikeyman.ikeycmd -keydb -changepw -db $DB_FILE -pw $DB_PASSWORD -new_pw $NEW_DB_PASSWORD -stash
+
+
+COPIA SEG FICHEROS
+__________________
+
+for i in `ls /opt/WebSphere/HTTPServer85/ssl/*wstest*.???` ; do echo $i; cp -p ${i} ${i}_hoy ;done
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

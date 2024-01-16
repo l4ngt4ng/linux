@@ -1,0 +1,132 @@
+﻿
+TAREA TDSUM
+
+En el directorio: /etc/opt/tdsum/
+
+
+hay que configurar un archivo : 
+
+/etc/opt/tdsum/tdsum_notificacionesgoibrk.conf
+
+y un archivo con la password encriptada:
+
+/opt/WebSphere/HTTPServer85/bin/ldapstash "XXXCLAVEXXX"  /etc/opt/tdsum/notificacionesgoibrk.sth
+
+
+
+
+
+Formato del archivo: tdsum_notificacionesgoibrk.conf
+/etc/opt/tdsum/tdsum_notificacionesgoibrk.conf
+
+################################################################################
+#
+# Fichero: tdsum.conf
+# Descripcion: Fichero de configuraciÃ³n del script tdsum
+#
+################################################################################
+
+################################################################################
+# ConfiguraciÃ³n del servidor LDAP
+# Variables:
+#    * TDSUM_Ldaphost: Host Ldap. Se sobreescribe con la opcion -h <host>
+#    * TDSUM_LdapSSL: SSL habilitado. Se sobreescribe con la opcion -Z no
+#    * TDSUM_LdapPort: Puerto Ldap. Se sobreescribe con la opcion -p <port>
+################################################################################
+TDSUM_Ldaphost=tdsdmzpre.correosextpre.local
+TDSUM_LdapSSL=1
+TDSUM_LdapPort=636
+
+################################################################################
+# Ubicacion del fichero .kdb
+# Variables:
+#    * TDSUM_KdbFile: Fichero de BDD de claves. Se sobreescribe con la opcion
+#      -K <filename>
+#    * TDSUM_KdbPwd: Contrasenia del fichero de claves. Se sobreescribe con
+#      la opcion -P <pwd>. Si esta vacia, se asume la existencia del stash file
+# NOTAS:
+#   * Estas configuraciones solo son usadas si TDSUM_LdapSSL=1
+################################################################################
+TDSUM_KdbFile=/etc/opt/tdsum/noproductivo.kdb
+TDSUM_KdbPwd=
+
+################################################################################
+# Credenciales del usuario bind
+# Variables:
+#    * TDSUM_BindDN: Nombre distinguido del usuario de bind. Se sobreescribe
+#      con la opcion -D <bindDN> del script
+#    * TDSUM_BindPwd: Contrasenia del usuario bind. Se sobreescribe con la
+#      opcion -w <bindPwd> del script. Si se deja en blanco, se solicitara
+#      interactivamente al usuario
+#    * TDSUM_AuthGroupDN: Grupo de autorizacion. Si se deja en blanco, solo se
+#      registra el usuario para su autenticacion. Se sobreescribe con la
+#      opcion -g <groupDN> del script
+# NOTAS:
+#    * Con estas credenciales se puede mapear un usuario a los grupos de
+#      autorizacion de la aplicacion
+################################################################################
+TDSUM_BindDN="cn=S002268,ou=eventosext,ou=Aplicaciones,o=public,o=correos,c=es"
+TDSUM_BindPwd="WM7JTtxx"
+TDSUM_AuthGroupDN="CN=EVENTOSEXT_PRE_US_AUTHMERCHANTS,ou=Roles,ou=eventosext,ou=Aplicaciones,o=public,o=correos,c=es"
+
+################################################################################
+# Credenciales del usuario actualizador
+# Variables:
+#    * TDSUM_UpdDN: Nombre distinguido del usuario actualizador. Se sobreescribe
+#      con la opcion -u <userDN> del script
+#    * TDSUM_UpdPwd: Contrasenia del usuario actualizador. Se sobreescribe con
+#      la opcion -c <updPwd> del script. Si se deja en blanco, se solicitara
+#      interactivamente al usuario
+# NOTAS:
+# * Con estas credenciales se pueden crear usuarios en ciertos repositorios
+#   de usuarios
+################################################################################
+TDSUM_UpdDN="cn=S002265,ou=merchants,ou=Aplicaciones,o=public,o=correos,c=es"
+TDSUM_UpdPwd="PIaYSvf2"
+
+################################################################################
+# Contenedores de usuarios
+# Variables:
+#   * TDSUM_UserOuBaseDN: ubicacion del contenedor de todos los usuarios. Se
+#     sobreescribe con la opcion -b <userBaseDN> del script
+#   * TDSUM_UserOuRDN: ou RELATIVA al userBaseDN. Se sobreescribe con la opcion
+#     -r <userRDN> del script
+#
+################################################################################
+TDSUM_UserOuBaseDN="ou=usuarios,o=public,o=correos,c=es"
+TDSUM_UserOuRDN="ou=empresas"
+
+
+
+______________________________________
+	ACLARACIONES AL FICHERO
+
+______________________________________
+No cambia entre pasarelas:
+
+TDSUM_UserOuBaseDN="ou=usuarios,o=public,o=correos,c=es"
+TDSUM_UserOuRDN="ou=empresas"
+____________________________________________
+
+Estos son genericos por entorno:
+
+TDSUM_UpdDN="cn=S002265,ou=merchants,ou=Aplicaciones,o=public,o=correos,c=es"
+TDSUM_UpdPwd="PIaYSvf2"
+
+
+Los usuarios UpdDN son genéricos actualmente uno por entorno:
+
+DES	GESTOR	S002264	USUARIO ACTUALIZADOR MERCHANTS, TDSDES	GENERICO		UHEddDl6
+PRE	GESTOR	S002265	USUARIO ACTUALIZADOR MERCHANTS, TDSPRE	GENERICO		PIaYSvf2
+PRO	GESTOR	S002266	USUARIO ACTUALIZADOR MERCHANTS, TDS	GENERICO		7FCD3hhP
+
+___________________________________________________________________________________________
+
+
+TDSUM_BindDN="cn=S002268,ou=eventosext,ou=Aplicaciones,o=public,o=correos,c=es"
+TDSUM_BindPwd="WM7JTtxx"
+TDSUM_AuthGroupDN="CN=EVENTOSEXT_PRE_US_AUTHMERCHANTS,ou=Roles,ou=eventosext,ou=Aplicaciones,o=public,o=correos,c=es"
+
+
+los proporciona GESTION de IDENTIDADES en TAREAS PREVIAS
+

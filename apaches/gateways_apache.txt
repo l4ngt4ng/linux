@@ -1,0 +1,78 @@
+ProxyPass Directive:
+
+<VirtualHost *:80>
+    ErrorLog "/var/log/apache2/frontend-error.log"
+    CustomLog "/var/log/apache2/frontend-access.log" common
+    ServerName frontend.organizacion.com
+    ProxyRequests Off
+    ProxyPreserveHost On
+    ProxyPass / http://backend.organizacion.com/
+    ProxyPassReverse / http://backend.organizacion.com/
+</VirtualHost>
+
+
+La directiva "ServerName" hace referencia a la URL a la que se dirige la petición. Deberá configurarse una entrada en el DNS que apunte al servidor.
+
+La directiva ProxyRequests Off evita que el front-end sea utilizado como proxy, es decir, que usuarios puedan saltar al front-end y de ahí a cualquier otra dirección. Es muy importante dejarlo deshabilitado para evitar problemas de seguridad o incluso legales.
+
+La directiva ProxyPreserveHost On permite que el salto del servidor de front-end al de back-end sea transparente para el usuario. Si no estuviera habilitada, el usuario se dirigiría a http://frontend.organización.com pero inmediatamente vería como la dirección cambia a http://backend.organizacion.com. Además, como en este supuesto el servidor de back-end no es visible desde Internet el usuario vería un error.
+
+Por último, las directivas ProxyPass y ProxyPassReverse gestionan el salto y la vuelta del servidor de front-end al de back-end.
+
+____________________________________
+
+Busca las siguientes directivas LoadModule y descomentalas, eliminando al caracter # ubicado al inicio de la línea.
+
+    LoadModule proxy_module modules/mod_proxy.so
+    LoadModule proxy_http_module modules/mod_proxy_http.so
+
+En la parte inferior de httpd.conf, agrega las siguientes líneas para permitir el enruteo.
+
+    ProxyPass /console http://localhost:8080/console
+    ProxyPass /images http://localhost:8080/images
+    ProxyPassreverse / http://localhost:8080/
+
+
+
+_____________________________________________________________
+APACHE SSL
+
+Para la instalacion de certificados en apache el procedimiento es algo diferente. Partimos de una configuracion estandar de la casa con las siguientes directivas en la configuracion del apache.
+Directiva 	Descripcion.
+SSLCertificateFile 	Parte publica del certificado del servidor.
+SSLCertificateKeyFile 	Parte privada del certificado del servidor.
+SSLCertificateChainFile 	Cadena de certificacion emisora del certificado del servidor concatenada en un archivo. ESTA COSA FUNCIONA SOLO SI HABILITAS UN FLAG, POR DEFECTO CONFÍA.ADEMAS ESTA DEPRECADO
+
+SSLCACertificatePath 	Ruta del directorio donde se dejaran cadena de certificacion emisora del certificado del servidor en archivos separados.
+
+A partir de un archivo p12 deberemos ir rellenando los archivos/directorios tal y como se explica en la table. Para ello transformaremos el p12 en un archivo pem y separaremos los diferentes archivos. 
+
+
+SSLCACertificateFile  
+This directive sets the all-in-one file where you can assemble the Certificates of Certification Authorities (CA) whose clients you deal with. These are used for Client Authentication. Such a file is simply the concatenation of the various PEM-encoded Certificate files, in order of preference. This can be used alternatively and/or additionally to SSLCACertificatePath.
+
+
+
+OPENSSL PKCS12  p12 to pem
+______________
+
+openssl pkcs12 -in $ARCHIVO_P12 -out /tmp/tmp.pem -nodes
+
+
+
+Ahora tendremos un archivo.pem con todos los certificados (publicos y privados concatenados). Deberemos de diferenciar cada parte y copiarla en el archivo correspondiente.
+
+    SSLCertificateKeyFile: Este certificado suele ser el primero y reconoceremos que tiene el encabezado "-----BEGIN PRIVATE KEY-----". Obtendremos el texto entre esta etiqueta y -----END PRIVATE KEY----- y lo copiaremos al archivo definido en la directiva "SSLCertificateKeyFile"
+    SSLCertificateFile: Este certificado lo identificaremos por que el CN del Subject es muy parecido o igual al de la clave privada aparte de estar emitido por las mismas CAs.Extraeremos el texto entre etiquetas de este certificado y lo copiaremos en "SSLCertificateFile".
+
+Una vez instalados la clave privada y el certificado publico tramitaremos las CAs, estos certificados son los emisores de los anteriormente tratados. Es posible que las CAs emisoras vengan incluidas en el P12. No obstante adjunto aqui las del comunes de Correos. File:CAs.zip
+
+Es necesario conocer las CAs emisoras del certificado para ello bastara con abrir el *.cer de la clave publica desde cualquier windows.
+CAs ej.png
+
+    SSLCertificateChainFile: En este archivo gardaremos una concatenacion de todas las CAs emisoras de la cadena.(vease primera imagen).
+    SSLCACertificatePath: En esta ruta guardaremos en archivos separados las CAs emisoras.
+
+
+
+

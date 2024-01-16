@@ -1,0 +1,21 @@
+script /dev/bull -c bash 
+
+ctrol Z     que hace un Ẑ
+
+stty raw -echo; fg 
+
+escribir reset 
+
+
+te regunta terminal type ? xterm
+
+
+export TERM=xterm
+export SHELL=bash
+
+
+stty size  con esto ves el numero de columnas y rows que tiene si es poco en plan 50,80 ---> para cambiarlo : 
+
+stty rwos 51 columns 159 
+
+__________________________________

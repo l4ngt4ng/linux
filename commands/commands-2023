@@ -1,0 +1,222 @@
+l i n u x  2 0 2 3
+
+---
+w h i c h 
+
+which id
+/usr/bin/id 
+
+alternativa : command -v id
+/usr/bin/id 
+
+---
+
+s h e l l s 
+
+~ ❯ cat /etc/shells
+/bin/sh
+/bin/bash
+/usr/bin/sh
+/usr/bin/bash
+/usr/bin/tmux
+/bin/tmux
+/usr/bin/zsh
+/bin/zsh
+
+echo $SHELL
+
+/bin/zsh 
+
+---
+
+e x e c u t i o n   o u t   c o d e 
+
+echo $?  
+0 <--- succesfull 
+
+diferente de 0 hay muchos 1 127 ... <--- E R R O R 
+
+---
+
+
+stderr 2>/dev/null : la salida error a /dev/null
+stdout cat /etc/hosts >/dev/null : estas redirigiendo el output la salida a dev null no se veria el resultado de la ejecucion
+
+si ejecutas : cat /archivonoexiste > /dev/null 2>&1    esto lo que dice es redirige la salida error donde tengas la salida estandar el output 
+
+la forma standart es : cat /archivonoexiste &>/dev/null ni output ni error 
+
+---
+
+n o h u p 
+
+alternativa 
+
+whireshark &>/dev/null & disown   <--- es lo mismo que nohup whireshark & 
+
+
+---
+
+f i l e  d e s c r i p t o r s 
+
+1 y 2 son salida standar y error
+
+creas un descriptor de fichero ( necesario escritura para crearlo )
+
+exec 4 <>newFileReadWrite lectura y escritura 
+exec 4>newFileWrite lo creas escritura 
+
+lo escribes: 
+id  >&4                     
+id: write error: Bad file descriptor
+
+
+lo conviertes a read only
+exec 4<newFileWrite  lectura
+
+id  >&4                     
+id: write error: Bad file descriptor
+
+Cerrarlo
+exec 4>&-
+
+Copias entre descriptores 
+
+creamos el 7 y el 8 nuevos porque el 4 lo cerre antes:
+
+crea el 7 en modo RW y lo asocia al fichero dataFile
+~ ❯ exec 7<>dataFile
+escribe el whoami output dentro 
+~ ❯ whoami >&7 
+~ ❯ cat dataFile 
+abenito
+
+copio el descriptor de fichero 8 From/del 7 
+~ ❯ exec 8>&7
+escibo sobre el 8 
+~ ❯ id -a >&8
+
+O J O se escribe en el 7 tambien porque son copias
+~ ❯ cat dataFile
+abenito
+uid=1000(abenito) gid=1000(abenito) groups=1000(abenito),10(wheel),970(pkg-build),971(docker),984(libvirt)
+
+
+7                   8    puedes cerrar el 7 con exec 7>&- y ya no podria    7                   8
+|                   |    operar sobre el fichero, pero el ocho sigue        |                   |
+|                   |    pudiendo                                           x                   |
+ ---> dataFile <----                                                              dataFile <----
+
+
+Por ultimo a la que creas la copia de un descriptor a otro puedes borrar el original 
+
+exec 8>&7- esto genera la flecha del 8 al archivo que paunta 7 y cierra siete 
+
+---
+
+
+
+find . -name 'loquesea' | xargs -I_ rm -fr _    <--- borra cada linea que ha sacado find 
+
+find . -name 'loquesea' -prune -exec rm -fr {} \;  lo mismo y prune es porque find sigue siendo recursivo y aun habiendo borrado luego intenta buscar en esa ubicacion
+
+para quitar el NAME 
+
+NAME 
+123454321:sdaddfafsd 
+123243433:sadffvfdvf 
+
+docker ps | tail -n+2 regresa 
+123454321:sdaddfafsd 
+123243433:sadffvfdvf 
+
+docker ps  | tail -n+2 | fzf  la salida se convierte en elegible interactivamente 
+
+instance_selected=$(k get pods | tail -n+2 | fzf)  te lo guardas 
+docker ps | awk '{if (NR!=1) print $1 ": " $(NF)}' | fzf  --height 40%   <--- esta ultima cosa es para mostrar  arriba la salida de fzf 
+
+
+---
+
+s h e l l s 
+
+t t y ( tele type writer) is a device 
+the terminal session running a shell process is associated with a TTY 
+
+ps -fea | grep bash 
+501 29874 19345 0 11:00PM ttys007 0:00:01 bash 
+501 29832 29874 0 11:00PM ttys007 0:00:00 grep bash
+
+tty command exposes your terminal running 
+/dev/ttys007 <--- 
+
+
+cuando corres algo con nohup y & desasocias que corra asociado a un TTY por eso si haces ps -fea 
+en lugar de tty tendra ?? 
+
+501 29874 19345 0 11:00PM ?? 0:00:01 talscript execuion nohup &
+
+
+
+
+---
+s t r a c e 
+
+strace -T ---> timinginformation
+strace -f ---> trace child process 
+strace -p ---> trace parent process 
+
+strace -Tfp < process id >
+
+d e b u g 
+
+run this before run script 
+sudo strace -Tfp $$ 2>&1 | grep -E 'execve' & 
+
+-/runscript.sh 
+
+and strace will show you call var systems 
+
+---
+
+
+i n s i d e  s c r i p t s 
+
+[[ ]] vs [ ]
+
+las dobles permiten evaluar cosas como :
+uso de () para agrupar [[ 7 < ( a + b -c ) && ( d + 1 )]]
+son mas novedosas las singles [] no permiten operaciones complejas de evaluacion en if then 
+
+---
+
+
+for i in &(seq 1 3 ); do 
+
+for i in {1 .. 3}; do 
+
+diferencia entre ${UNAVARIABLE} y "${UNAVARIABLE}
+
+si UNAVARIABLE=uno dos tres   <--- un strng que contiene espacios >
+
+en un for por ejemplo la primera se evalua con tres vueltas del bucle
+la segunda con una sola CONSIDERA EL STRING COMO UNA UNIDAD INDEPENDIENTE DE SU CONTENIDO
+
+---
+
+s u b  s h e l l s  f
+M U Y  U T I L 
+
+(date -u )
+regresara:
+Fri Jul 5 21:34:12 UTC 2023
+
+pero esto trata de ejecutar la string que devuelve la propia ejecucion de date : 
+"Fri Jul 5 21:34:12 UTC 2023"
+
+$(date -u) y regresa logicamente command not found 
+bash: Fri: command not found 
+
+---
+
+voy por streams ###
